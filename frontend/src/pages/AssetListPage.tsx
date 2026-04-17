@@ -28,11 +28,20 @@ const GRID_COLS: Record<ViewMode, string> = {
 export default function AssetListPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<AssetListResponse | null>(null);
-  const [filters, setFilters] = useState<AssetFilters>(INIT_FILTERS);
+  const [filters, setFilters] = useState<AssetFilters>(() => {
+    try {
+      const s = sessionStorage.getItem("assetListFilters");
+      return s ? (JSON.parse(s) as AssetFilters) : INIT_FILTERS;
+    } catch { return INIT_FILTERS; }
+  });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("medium");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      return (sessionStorage.getItem("assetListViewMode") as ViewMode) || "medium";
+    } catch { return "medium"; }
+  });
   const [dlFormat, setDlFormat] = useState<"csv" | "json">("csv");
   const [downloading, setDownloading] = useState(false);
   const [dlError, setDlError] = useState("");
@@ -64,6 +73,14 @@ export default function AssetListPage() {
     timerRef.current = setTimeout(() => load(filters, page), 300);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [filters, page, load]);
+
+  useEffect(() => {
+    sessionStorage.setItem("assetListFilters", JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    sessionStorage.setItem("assetListViewMode", viewMode);
+  }, [viewMode]);
 
   const handleFilterChange = (f: AssetFilters) => { setFilters(f); setPage(1); };
 
