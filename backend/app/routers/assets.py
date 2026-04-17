@@ -3,8 +3,6 @@ import io
 import json
 import math
 import os
-import shutil
-import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
@@ -26,48 +24,27 @@ from ..schemas import (
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-PHOTO_DIR = os.path.join(UPLOAD_DIR, "photos")
-THUMB_DIR = os.path.join(UPLOAD_DIR, "thumbnails")
 THUMB_SIZE = (320, 320)
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 
 
-def ensure_dirs():
-    os.makedirs(PHOTO_DIR, exist_ok=True)
-    os.makedirs(THUMB_DIR, exist_ok=True)
-
-
-def make_thumbnail(src: str, dest: str | None = None) -> str | None:
-    ext = os.path.splitext(src)[1].lower()
-    if ext not in IMAGE_EXTS:
-        return None
+def make_thumbnail(src: bytes) -> bytes | None:
     try:
-        out_path = dest or os.path.join(THUMB_DIR, f"thumb_{uuid.uuid4().hex}.jpg")
-        with Image.open(src) as img:
+        buf = io.BytesIO()
+        with Image.open(io.BytesIO(src)) as img:
             img.thumbnail(THUMB_SIZE)
-            img.convert("RGB").save(out_path, "JPEG", quality=88)
-        return out_path
+            img.convert("RGB").save(buf, "JPEG", quality=88)
+        return buf.getvalue()
     except Exception:
         return None
-
-
-def photo_url(file_path: str) -> str:
-    """Return API URL with mtime version to bust browser cache after rotation."""
-    fname = os.path.basename(file_path)
-    try:
-        mtime = int(os.path.getmtime(file_path))
-    except OSError:
-        mtime = 0
-    return f"/api/photos/{fname}?v={mtime}"
 
 
 def build_photo(photo: AssetPhoto) -> PhotoResponse:
     return PhotoResponse(
         id=photo.id,
         file_name=photo.file_name,
-        url=photo_url(photo.file_path),
-        thumb_url=photo_url(photo.thumb_path) if photo.thumb_path else None,
+        url=f"/api/photos/{photo.id}",
+        thumb_url=f"/api/photos/{photo.id}/thumb" if photo.thumb_data else None,
         sort_order=photo.sort_order,
     )
 
@@ -85,6 +62,7 @@ def build_asset(asset: Asset) -> AssetResponse:
         edition=asset.edition,
         official_url=asset.official_url,
         release_year=asset.release_year,
+        condition=asset.condition,
         asset_value=asset.asset_value,
         tags=asset.tags,
         description=asset.description,
@@ -93,6 +71,25 @@ def build_asset(asset: Asset) -> AssetResponse:
         created_at=asset.created_at,
         updated_at=asset.updated_at,
     )
+
+
+def _apply_filters(q, search, asset_category, hardware, genre):
+    if search:
+        q = q.filter(
+            or_(
+                Asset.name.ilike(f"%{search}%"),
+                Asset.maker.ilike(f"%{search}%"),
+                Asset.tags.ilike(f"%{search}%"),
+                Asset.description.ilike(f"%{search}%"),
+            )
+        )
+    if asset_category:
+        q = q.filter(Asset.asset_category == asset_category)
+    if hardware:
+        q = q.filter(Asset.hardware == hardware)
+    if genre:
+        q = q.filter(Asset.genre == genre)
+    return q
 
 
 # ── list ────────────────────────────────────────────────
@@ -109,23 +106,13 @@ def list_assets(
     db: Session = Depends(get_db),
 ):
     q = db.query(Asset).filter(Asset.deleted_at.is_(None))
-    if search:
-        q = q.filter(
-            or_(
-                Asset.name.ilike(f"%{search}%"),
-                Asset.maker.ilike(f"%{search}%"),
-                Asset.tags.ilike(f"%{search}%"),
-                Asset.description.ilike(f"%{search}%"),
-            )
-        )
-    if asset_category:
-        q = q.filter(Asset.asset_category == asset_category)
-    if hardware:
-        q = q.filter(Asset.hardware == hardware)
-    if genre:
-        q = q.filter(Asset.genre == genre)
+    q = _apply_filters(q, search, asset_category, hardware, genre)
 
-    sort_map = {"name": Asset.name, "created_at": Asset.created_at}
+    sort_map = {
+        "name": Asset.name,
+        "created_at": Asset.created_at,
+        "asset_value": Asset.asset_value,
+    }
     sort_col = sort_map.get(sort_by or "name", Asset.name)
     order = sort_col.asc() if sort_dir != "desc" else sort_col.desc()
 
@@ -143,8 +130,20 @@ def list_assets(
 
 # ── download (CSV / JSON) ────────────────────────────────
 DOWNLOAD_FIELDS = [
-    "id", "name", "asset_category", "hardware", "maker", "genre", "edition",
-    "official_url", "release_year", "asset_value", "tags", "description", "created_at",
+    "id",
+    "name",
+    "asset_category",
+    "hardware",
+    "maker",
+    "genre",
+    "edition",
+    "official_url",
+    "release_year",
+    "condition",
+    "asset_value",
+    "tags",
+    "description",
+    "created_at",
 ]
 
 
@@ -158,21 +157,7 @@ def download_assets(
     db: Session = Depends(get_db),
 ):
     q = db.query(Asset).filter(Asset.deleted_at.is_(None))
-    if search:
-        q = q.filter(
-            or_(
-                Asset.name.ilike(f"%{search}%"),
-                Asset.maker.ilike(f"%{search}%"),
-                Asset.tags.ilike(f"%{search}%"),
-                Asset.description.ilike(f"%{search}%"),
-            )
-        )
-    if asset_category:
-        q = q.filter(Asset.asset_category == asset_category)
-    if hardware:
-        q = q.filter(Asset.hardware == hardware)
-    if genre:
-        q = q.filter(Asset.genre == genre)
+    q = _apply_filters(q, search, asset_category, hardware, genre)
     if format not in ("csv", "json"):
         raise HTTPException(400, "format は 'csv' または 'json' を指定してください")
 
@@ -219,13 +204,20 @@ async def create_asset(
     edition: str | None = Form(None),
     official_url: str | None = Form(None),
     release_year: str | None = Form(None),
+    condition: str | None = Form(None),
     asset_value: int | None = Form(None),
     tags: str | None = Form(None),
     description: str | None = Form(None),
     photos: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
-    ensure_dirs()
+    for photo_file in photos:
+        if not photo_file.filename:
+            continue
+        ext = os.path.splitext(photo_file.filename)[1].lower()
+        if ext not in IMAGE_EXTS:
+            raise HTTPException(422, f"サポートされていないファイル形式です: {ext}")
+
     asset = Asset(
         name=name,
         asset_category=asset_category,
@@ -235,6 +227,7 @@ async def create_asset(
         edition=edition or None,
         official_url=official_url or None,
         release_year=release_year or None,
+        condition=condition or None,
         asset_value=asset_value,
         tags=tags or None,
         description=description or None,
@@ -242,26 +235,25 @@ async def create_asset(
     db.add(asset)
     db.flush()
 
-    for idx, photo_file in enumerate(photos):
-        if not photo_file.filename:
-            continue
-        ext = os.path.splitext(photo_file.filename)[1] or ".jpg"
-        unique = f"{uuid.uuid4().hex}{ext}"
-        path = os.path.join(PHOTO_DIR, unique)
-        with open(path, "wb") as f:
-            shutil.copyfileobj(photo_file.file, f)
-        thumb = make_thumbnail(path)
-        db.add(
-            AssetPhoto(
-                asset_id=asset.id,
-                file_path=path,
-                file_name=photo_file.filename,
-                thumb_path=thumb,
-                sort_order=idx,
+    try:
+        for idx, photo_file in enumerate(photos):
+            if not photo_file.filename:
+                continue
+            file_bytes = await photo_file.read()
+            db.add(
+                AssetPhoto(
+                    asset_id=asset.id,
+                    file_name=photo_file.filename,
+                    file_data=file_bytes,
+                    thumb_data=make_thumbnail(file_bytes),
+                    sort_order=idx,
+                )
             )
-        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
-    db.commit()
     db.refresh(asset)
     return build_asset(asset)
 
@@ -296,30 +288,37 @@ async def add_photos(
     photos: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
-    ensure_dirs()
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
         raise HTTPException(404, "Asset not found")
-    current_max = max((p.sort_order for p in asset.photos), default=-1)
-    for idx, photo_file in enumerate(photos):
+
+    for photo_file in photos:
         if not photo_file.filename:
             continue
-        ext = os.path.splitext(photo_file.filename)[1] or ".jpg"
-        unique = f"{uuid.uuid4().hex}{ext}"
-        path = os.path.join(PHOTO_DIR, unique)
-        with open(path, "wb") as f:
-            shutil.copyfileobj(photo_file.file, f)
-        thumb = make_thumbnail(path)
-        db.add(
-            AssetPhoto(
-                asset_id=asset.id,
-                file_path=path,
-                file_name=photo_file.filename,
-                thumb_path=thumb,
-                sort_order=current_max + 1 + idx,
+        ext = os.path.splitext(photo_file.filename)[1].lower()
+        if ext not in IMAGE_EXTS:
+            raise HTTPException(422, f"サポートされていないファイル形式です: {ext}")
+
+    current_max = max((p.sort_order for p in asset.photos), default=-1)
+    try:
+        for idx, photo_file in enumerate(photos):
+            if not photo_file.filename:
+                continue
+            file_bytes = await photo_file.read()
+            db.add(
+                AssetPhoto(
+                    asset_id=asset.id,
+                    file_name=photo_file.filename,
+                    file_data=file_bytes,
+                    thumb_data=make_thumbnail(file_bytes),
+                    sort_order=current_max + 1 + idx,
+                )
             )
-        )
-    db.commit()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     db.refresh(asset)
     return build_asset(asset)
 
@@ -345,28 +344,18 @@ def rotate_photo(
         return build_photo(photo)
 
     try:
-        # Read image fully into memory before closing (avoids Windows file lock on overwrite)
-        img = Image.open(photo.file_path)
+        img = Image.open(io.BytesIO(photo.file_data))
         img.load()
         fmt = img.format or "JPEG"
         rotated = img.rotate(-degrees, expand=True)  # Pillow: negative = CW
         converted = rotated.convert("RGB" if fmt in ("JPEG", "JPG") else img.mode)
-        img.close()
 
-        # Write to a temp file, then atomically replace the original
-        tmp_path = photo.file_path + ".tmp"
+        buf = io.BytesIO()
         save_kwargs = {"quality": 92} if fmt in ("JPEG", "JPG") else {}
-        converted.save(tmp_path, "JPEG" if fmt in ("JPEG", "JPG") else fmt, **save_kwargs)
-        os.replace(tmp_path, photo.file_path)
-
-        # Regenerate thumbnail in-place
-        if photo.thumb_path:
-            make_thumbnail(photo.file_path, dest=photo.thumb_path)
-        else:
-            photo.thumb_path = make_thumbnail(photo.file_path)
+        converted.save(buf, "JPEG" if fmt in ("JPEG", "JPG") else fmt, **save_kwargs)
+        photo.file_data = buf.getvalue()
+        photo.thumb_data = make_thumbnail(photo.file_data)
     except Exception as e:
-        if os.path.exists(photo.file_path + ".tmp"):
-            os.remove(photo.file_path + ".tmp")
         raise HTTPException(500, f"Rotation failed: {e}") from e
 
     db.commit()
@@ -398,8 +387,5 @@ def delete_photo(asset_id: int, photo_id: int, db: Session = Depends(get_db)):
     )
     if not photo:
         raise HTTPException(404, "Photo not found")
-    for fp in [photo.file_path, photo.thumb_path]:
-        if fp and os.path.exists(fp):
-            os.remove(fp)
     db.delete(photo)
     db.commit()

@@ -6,6 +6,7 @@ export interface GameSearchResult {
   maker: string | null;
   genre: string | null;
   release_year: string | null;
+  official_url: string | null;
   found: boolean;
   source_title: string | null;
 }

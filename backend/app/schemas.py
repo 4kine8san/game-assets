@@ -25,6 +25,7 @@ class AssetResponse(BaseModel):
     edition: str | None = None
     official_url: str | None = None
     release_year: str | None = None
+    condition: str | None = None
     asset_value: int | None = None
     tags: str | None = None
     description: str | None = None
@@ -47,6 +48,7 @@ class AssetUpdate(BaseModel):
     edition: str | None = None
     official_url: str | None = None
     release_year: str | None = None
+    condition: str | None = None
     asset_value: int | None = None
     tags: str | None = None
     description: str | None = None

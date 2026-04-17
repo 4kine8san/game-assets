@@ -46,6 +46,7 @@ export default function AssetStatsPage() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(xAxis, yAxis); }, [xAxis, yAxis, load]);
 
   const isYen = yAxis !== "count";
@@ -75,7 +76,7 @@ export default function AssetStatsPage() {
         {result && (
           <div style={styles.summary}>
             合計: <strong>{isYen ? `¥${total.toLocaleString()}` : `${total}件`}</strong>
-            　／　{result.items.length} カテゴリ
+             / {result.items.length} カテゴリ
           </div>
         )}
       </div>
@@ -91,7 +92,7 @@ export default function AssetStatsPage() {
         ) : (
           <>
             <div style={styles.chartTitle}>
-              {result.x_label}別　{result.y_label}
+              {result.x_label}別 {result.y_label}
             </div>
             <ResponsiveContainer width="100%" height={360}>
               <BarChart data={result.items} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
@@ -108,12 +109,15 @@ export default function AssetStatsPage() {
                   tickFormatter={isYen ? (v: number) => `¥${v.toLocaleString()}` : undefined}
                 />
                 <Tooltip
-                  formatter={(v: number) => isYen ? `¥${v.toLocaleString()}` : `${v}件`}
+                  formatter={(v) => {
+                    const n = typeof v === "number" ? v : 0;
+                    return isYen ? `¥${n.toLocaleString()}` : `${n}件`;
+                  }}
                   contentStyle={{ borderRadius: "8px", border: "1px solid #bbf7d0" }}
                 />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {result.items.map((_, i) => (
-                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  {result.items.map((item, i) => (
+                    <Cell key={item.label} fill={BAR_COLORS[i % BAR_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -134,7 +138,7 @@ export default function AssetStatsPage() {
             </thead>
             <tbody>
               {result.items.map((item, i) => (
-                <tr key={i} style={i % 2 === 0 ? styles.trEven : {}}>
+                <tr key={item.label} style={i % 2 === 0 ? styles.trEven : {}}>
                   <td style={styles.td}>{item.label}</td>
                   <td style={{ ...styles.td, textAlign: "right", fontWeight: 700 }}>
                     {isYen ? `¥${item.value.toLocaleString()}` : `${item.value}件`}

@@ -5,7 +5,7 @@ from ..database import get_db
 from ..models import Master
 from ..schemas import MasterItem
 
-VALID_TYPES = {"category", "hardware", "genre", "edition"}
+VALID_TYPES = {"category", "hardware", "genre", "edition", "condition"}
 
 router = APIRouter(prefix="/api/masters", tags=["masters"])
 

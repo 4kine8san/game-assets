@@ -8,9 +8,10 @@ import {
 } from "../api/assets";
 import type { AssetPhoto } from "../types/asset";
 import PhotoUpload from "../components/PhotoUpload";
-import type { PhotoItem } from "../components/PhotoUpload";
-import { applyRotation } from "../components/PhotoUpload";
+import type { PhotoItem } from "../components/photoUtils";
+import { applyRotation } from "../components/photoUtils";
 import { useMasters } from "../contexts/MastersContext";
+import { API_BASE_URL } from "../config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ interface FormState {
   edition: string;
   official_url: string;
   release_year: string;
+  condition: string;
   asset_value: string;
   tags: string;
   description: string;
@@ -44,11 +46,11 @@ export default function AssetEditPage() {
   const { id } = useParams<{ id: string }>();
   const assetId = Number(id);
   const navigate = useNavigate();
-  const { category, hardware, genre, edition } = useMasters();
+  const { category, hardware, genre, edition, condition } = useMasters();
 
   const [form, setForm] = useState<FormState>({
     name: "", asset_category: "consumer", hardware: "", maker: "",
-    genre: "", edition: "", official_url: "", release_year: "", asset_value: "", tags: "", description: "",
+    genre: "", edition: "", official_url: "", release_year: "", condition: "", asset_value: "", tags: "", description: "",
   });
   const [existingPhotos, setExistingPhotos] = useState<ExistingPhoto[]>([]);
   const [newPhotos, setNewPhotos] = useState<PhotoItem[]>([]);
@@ -80,6 +82,7 @@ export default function AssetEditPage() {
         edition: asset.edition ?? "",
         official_url: asset.official_url ?? "",
         release_year: asset.release_year ?? "",
+        condition: asset.condition ?? "",
         asset_value: asset.asset_value != null ? String(asset.asset_value) : "",
         tags: asset.tags ?? "",
         description: asset.description ?? "",
@@ -87,8 +90,8 @@ export default function AssetEditPage() {
       setExistingPhotos(
         asset.photos.map((p: AssetPhoto) => ({
           id: p.id, file_name: p.file_name,
-          url: `http://localhost:8000${p.url}`,
-          thumb_url: p.thumb_url ? `http://localhost:8000${p.thumb_url}` : undefined,
+          url: `${API_BASE_URL}${p.url}`,
+          thumb_url: p.thumb_url ? `${API_BASE_URL}${p.thumb_url}` : undefined,
           sort_order: p.sort_order,
           rotation: 0, deleted: false,
         }))
@@ -148,7 +151,7 @@ export default function AssetEditPage() {
   };
 
   // ── Save ────────────────────────────────────────────────────────────────────
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) { setError("資産名を入力してください"); return; }
     setSaving(true);
@@ -165,6 +168,7 @@ export default function AssetEditPage() {
         edition: form.edition || null,
         official_url: form.official_url || null,
         release_year: form.release_year || null,
+        condition: form.condition || null,
         asset_value: form.asset_value ? Number(form.asset_value) : null,
         tags: form.tags || null,
         description: form.description || null,
@@ -309,8 +313,23 @@ export default function AssetEditPage() {
             <input style={styles.input} value={form.release_year} onChange={(e) => set("release_year", e.target.value)} placeholder="例: 1992" maxLength={10} />
           </Field>
 
+          <Field label="状態">
+            <select style={styles.select} value={form.condition} onChange={(e) => set("condition", e.target.value)}>
+              <option value="">選択してください</option>
+              {condition.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+
           <Field label="資産評価額（円）">
-            <input style={styles.input} type="number" min="0" value={form.asset_value} onChange={(e) => set("asset_value", e.target.value)} placeholder="例: 3000" />
+            <input
+              style={styles.input}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={form.asset_value}
+              onChange={(e) => set("asset_value", e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="例: 3000"
+            />
           </Field>
 
           <Field label="タグ" hint="カンマ区切りで複数入力できます">

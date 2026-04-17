@@ -8,6 +8,8 @@ interface Masters {
   hardware: MasterItem[];
   genre: MasterItem[];
   edition: MasterItem[];
+  condition: MasterItem[];
+  mastersError: string;
 }
 
 const MastersContext = createContext<Masters>({
@@ -15,6 +17,8 @@ const MastersContext = createContext<Masters>({
   hardware: [],
   genre: [],
   edition: [],
+  condition: [],
+  mastersError: "",
 });
 
 export function MastersProvider({ children }: { children: ReactNode }) {
@@ -23,6 +27,8 @@ export function MastersProvider({ children }: { children: ReactNode }) {
     hardware: [],
     genre: [],
     edition: [],
+    condition: [],
+    mastersError: "",
   });
 
   useEffect(() => {
@@ -31,18 +37,37 @@ export function MastersProvider({ children }: { children: ReactNode }) {
       fetchMasters("hardware"),
       fetchMasters("genre"),
       fetchMasters("edition"),
+      fetchMasters("condition"),
     ])
-      .then(([category, hardware, genre, edition]) => {
-        setMasters({ category, hardware, genre, edition });
+      .then(([category, hardware, genre, edition, condition]) => {
+        setMasters({ category, hardware, genre, edition, condition, mastersError: "" });
       })
       .catch(() => {
-        console.error("マスタデータの取得に失敗しました。バックエンドの接続を確認してください。");
+        setMasters((prev) => ({
+          ...prev,
+          mastersError: "マスタデータの取得に失敗しました。バックエンドの接続を確認してください。",
+        }));
       });
   }, []);
 
-  return <MastersContext.Provider value={masters}>{children}</MastersContext.Provider>;
+  return (
+    <MastersContext.Provider value={masters}>
+      {masters.mastersError && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#fef2f2", borderBottom: "2px solid #fca5a5",
+          color: "#dc2626", fontSize: "14px", fontWeight: 600,
+          padding: "10px 20px", textAlign: "center",
+        }}>
+          ⚠ {masters.mastersError}
+        </div>
+      )}
+      {children}
+    </MastersContext.Provider>
+  );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMasters(): Masters {
   return useContext(MastersContext);
 }

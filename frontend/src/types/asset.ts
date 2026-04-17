@@ -16,6 +16,7 @@ export interface Asset {
   edition?: string;
   official_url?: string;
   release_year?: string;
+  condition?: string;
   asset_value?: number;
   tags?: string;
   description?: string;
@@ -47,4 +48,6 @@ export const SORT_OPTIONS = [
   { value: "name|desc", label: "資産名順（降順）" },
   { value: "created_at|desc", label: "登録日（新しい順）" },
   { value: "created_at|asc", label: "登録日（古い順）" },
+  { value: "asset_value|desc", label: "評価額（高い順）" },
+  { value: "asset_value|asc", label: "評価額（低い順）" },
 ];
