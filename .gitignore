@@ -1,0 +1,3 @@
+backend/.env
+backend/uvicorn_err.log
+backend/uvicorn.log
