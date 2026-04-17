@@ -2,7 +2,6 @@ import csv
 import io
 import json
 import math
-import os
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
@@ -25,7 +24,20 @@ from ..schemas import (
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
 THUMB_SIZE = (320, 320)
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
+ALLOWED_PILLOW_FORMATS = {"JPEG", "PNG", "GIF", "WEBP", "BMP"}
+
+
+def _verify_image(data: bytes, filename: str) -> None:
+    """Verify the uploaded bytes are a real image (not just a renamed file)."""
+    try:
+        with Image.open(io.BytesIO(data)) as img:
+            img.verify()
+        if Image.open(io.BytesIO(data)).format not in ALLOWED_PILLOW_FORMATS:
+            raise HTTPException(422, "サポートされていないファイル形式です")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(422, f"無効な画像ファイルです: {filename}")
 
 
 def make_thumbnail(src: bytes) -> bytes | None:
@@ -211,12 +223,13 @@ async def create_asset(
     photos: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
+    uploaded: list[tuple[str, bytes]] = []
     for photo_file in photos:
         if not photo_file.filename:
             continue
-        ext = os.path.splitext(photo_file.filename)[1].lower()
-        if ext not in IMAGE_EXTS:
-            raise HTTPException(422, f"サポートされていないファイル形式です: {ext}")
+        file_bytes = await photo_file.read()
+        _verify_image(file_bytes, photo_file.filename)
+        uploaded.append((photo_file.filename, file_bytes))
 
     asset = Asset(
         name=name,
@@ -236,14 +249,11 @@ async def create_asset(
     db.flush()
 
     try:
-        for idx, photo_file in enumerate(photos):
-            if not photo_file.filename:
-                continue
-            file_bytes = await photo_file.read()
+        for idx, (fname, file_bytes) in enumerate(uploaded):
             db.add(
                 AssetPhoto(
                     asset_id=asset.id,
-                    file_name=photo_file.filename,
+                    file_name=fname,
                     file_data=file_bytes,
                     thumb_data=make_thumbnail(file_bytes),
                     sort_order=idx,
@@ -292,23 +302,21 @@ async def add_photos(
     if not asset:
         raise HTTPException(404, "Asset not found")
 
+    uploaded: list[tuple[str, bytes]] = []
     for photo_file in photos:
         if not photo_file.filename:
             continue
-        ext = os.path.splitext(photo_file.filename)[1].lower()
-        if ext not in IMAGE_EXTS:
-            raise HTTPException(422, f"サポートされていないファイル形式です: {ext}")
+        file_bytes = await photo_file.read()
+        _verify_image(file_bytes, photo_file.filename)
+        uploaded.append((photo_file.filename, file_bytes))
 
     current_max = max((p.sort_order for p in asset.photos), default=-1)
     try:
-        for idx, photo_file in enumerate(photos):
-            if not photo_file.filename:
-                continue
-            file_bytes = await photo_file.read()
+        for idx, (fname, file_bytes) in enumerate(uploaded):
             db.add(
                 AssetPhoto(
                     asset_id=asset.id,
-                    file_name=photo_file.filename,
+                    file_name=fname,
                     file_data=file_bytes,
                     thumb_data=make_thumbnail(file_bytes),
                     sort_order=current_max + 1 + idx,
@@ -356,7 +364,7 @@ def rotate_photo(
         photo.file_data = buf.getvalue()
         photo.thumb_data = make_thumbnail(photo.file_data)
     except Exception as e:
-        raise HTTPException(500, f"Rotation failed: {e}") from e
+        raise HTTPException(500, "画像の回転に失敗しました") from e
 
     db.commit()
     return build_photo(photo)

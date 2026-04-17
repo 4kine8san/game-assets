@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PhotoResponse(BaseModel):
@@ -36,26 +36,26 @@ class AssetResponse(BaseModel):
 
 
 class PhotoRotateRequest(BaseModel):
-    degrees: int  # 90, 180, 270
+    degrees: int = Field(..., ge=0, le=359)
 
 
 class AssetUpdate(BaseModel):
-    name: str | None = None
-    asset_category: str | None = None
-    hardware: str | None = None
-    maker: str | None = None
-    genre: str | None = None
-    edition: str | None = None
-    official_url: str | None = None
-    release_year: str | None = None
-    condition: str | None = None
-    asset_value: int | None = None
-    tags: str | None = None
-    description: str | None = None
+    name: str | None = Field(None, max_length=255)
+    asset_category: str | None = Field(None, max_length=50)
+    hardware: str | None = Field(None, max_length=100)
+    maker: str | None = Field(None, max_length=255)
+    genre: str | None = Field(None, max_length=100)
+    edition: str | None = Field(None, max_length=100)
+    official_url: str | None = Field(None, max_length=2048)
+    release_year: str | None = Field(None, max_length=10)
+    condition: str | None = Field(None, max_length=50)
+    asset_value: int | None = Field(None, ge=0, le=2_000_000_000)
+    tags: str | None = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=5000)
 
 
 class PhotoReorderRequest(BaseModel):
-    photo_ids: list[int]
+    photo_ids: list[int] = Field(..., max_length=200)
 
 
 class MasterItem(BaseModel):
