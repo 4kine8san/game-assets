@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -53,66 +52,52 @@ export default function AssetStatsPage() {
   const total = result?.items.reduce((s, i) => s + i.value, 0) ?? 0;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={() => navigate("/")}>← 一覧に戻る</button>
-        <h1 style={styles.title}>集計</h1>
+    <div className="max-w-[960px] mx-auto px-6 py-7 min-h-screen">
+      <div className="flex items-center gap-3.5 mb-5">
+        <button className="py-2.5 px-4 text-[15px] border border-slate-200 rounded-lg bg-white cursor-pointer text-slate-600 whitespace-nowrap" onClick={() => navigate("/")}>← 一覧に戻る</button>
+        <h1 className="m-0 text-2xl font-extrabold text-slate-900">集計</h1>
       </div>
 
-      {/* コントロール */}
-      <div style={styles.controls}>
-        <div style={styles.controlItem}>
-          <label style={styles.ctrlLabel}>X軸（分類）</label>
-          <select style={styles.sel} value={xAxis} onChange={(e) => setXAxis(e.target.value)}>
+      <div className="flex gap-4 flex-wrap items-end bg-white border border-slate-200 rounded-xl p-[18px_20px] mb-5">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[13px] font-bold text-slate-700">X軸（分類）</label>
+          <select className="py-2.5 px-3.5 text-[15px] border border-slate-300 rounded-lg bg-white min-w-[180px]" value={xAxis} onChange={(e) => setXAxis(e.target.value)}>
             {X_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
-        <div style={styles.controlItem}>
-          <label style={styles.ctrlLabel}>Y軸（値）</label>
-          <select style={styles.sel} value={yAxis} onChange={(e) => setYAxis(e.target.value)}>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[13px] font-bold text-slate-700">Y軸（値）</label>
+          <select className="py-2.5 px-3.5 text-[15px] border border-slate-300 rounded-lg bg-white min-w-[180px]" value={yAxis} onChange={(e) => setYAxis(e.target.value)}>
             {Y_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         {result && (
-          <div style={styles.summary}>
+          <div className="ml-auto text-[15px] text-slate-600 self-center">
             合計: <strong>{isYen ? `¥${total.toLocaleString()}` : `${total}件`}</strong>
              / {result.items.length} カテゴリ
           </div>
         )}
       </div>
 
-      {/* グラフ */}
-      <div style={styles.chartCard}>
+      <div className="bg-white border border-slate-200 rounded-[14px] p-6 px-5 mb-5 min-h-[200px]">
         {loading ? (
-          <div style={styles.center}>読み込み中...</div>
+          <div className="text-center p-[60px] text-base text-slate-500">読み込み中...</div>
         ) : error ? (
-          <div style={styles.errMsg}>{error}</div>
+          <div className="text-center p-[60px] text-[15px] text-red-600">{error}</div>
         ) : !result || result.items.length === 0 ? (
-          <div style={styles.center}>データがありません</div>
+          <div className="text-center p-[60px] text-base text-slate-500">データがありません</div>
         ) : (
           <>
-            <div style={styles.chartTitle}>
+            <div className="text-base font-bold text-slate-800 mb-4 text-center">
               {result.x_label}別 {result.y_label}
             </div>
             <ResponsiveContainer width="100%" height={360}>
               <BarChart data={result.items} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#d1fae5" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 13, fill: "#374151" }}
-                  angle={-35}
-                  textAnchor="end"
-                  interval={0}
-                />
-                <YAxis
-                  tick={{ fontSize: 13, fill: "#374151" }}
-                  tickFormatter={isYen ? (v: number) => `¥${v.toLocaleString()}` : undefined}
-                />
+                <XAxis dataKey="label" tick={{ fontSize: 13, fill: "#374151" }} angle={-35} textAnchor="end" interval={0} />
+                <YAxis tick={{ fontSize: 13, fill: "#374151" }} tickFormatter={isYen ? (v: number) => `¥${v.toLocaleString()}` : undefined} />
                 <Tooltip
-                  formatter={(v) => {
-                    const n = typeof v === "number" ? v : 0;
-                    return isYen ? `¥${n.toLocaleString()}` : `${n}件`;
-                  }}
+                  formatter={(v) => { const n = typeof v === "number" ? v : 0; return isYen ? `¥${n.toLocaleString()}` : `${n}件`; }}
                   contentStyle={{ borderRadius: "8px", border: "1px solid #bbf7d0" }}
                 />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
@@ -126,21 +111,20 @@ export default function AssetStatsPage() {
         )}
       </div>
 
-      {/* 明細テーブル */}
       {result && result.items.length > 0 && (
-        <div style={styles.tableCard}>
-          <table style={styles.table}>
+        <div className="bg-white border border-slate-200 rounded-[14px] overflow-hidden mb-10">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th style={styles.th}>{result.x_label}</th>
-                <th style={{ ...styles.th, textAlign: "right" }}>{result.y_label}</th>
+                <th className="py-3 px-[18px] text-[13px] font-bold text-slate-600 bg-slate-50 border-b-2 border-slate-200 text-left">{result.x_label}</th>
+                <th className="py-3 px-[18px] text-[13px] font-bold text-slate-600 bg-slate-50 border-b-2 border-slate-200 text-right">{result.y_label}</th>
               </tr>
             </thead>
             <tbody>
               {result.items.map((item, i) => (
-                <tr key={item.label} style={i % 2 === 0 ? styles.trEven : {}}>
-                  <td style={styles.td}>{item.label}</td>
-                  <td style={{ ...styles.td, textAlign: "right", fontWeight: 700 }}>
+                <tr key={item.label} className={i % 2 === 0 ? "bg-[#fafafa]" : ""}>
+                  <td className="py-[11px] px-[18px] text-[15px] text-slate-800 border-b border-slate-100">{item.label}</td>
+                  <td className="py-[11px] px-[18px] text-[15px] text-slate-800 border-b border-slate-100 text-right font-bold">
                     {isYen ? `¥${item.value.toLocaleString()}` : `${item.value}件`}
                   </td>
                 </tr>
@@ -152,24 +136,3 @@ export default function AssetStatsPage() {
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  page: { maxWidth: "960px", margin: "0 auto", padding: "28px 24px", background: "#f0fdf4", minHeight: "100vh" },
-  topBar: { display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" },
-  backBtn: { padding: "9px 18px", fontSize: "15px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#475569", whiteSpace: "nowrap" },
-  title: { margin: 0, fontSize: "24px", fontWeight: 800, color: "#0f172a" },
-  controls: { display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "flex-end", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "18px 20px", marginBottom: "20px" },
-  controlItem: { display: "flex", flexDirection: "column", gap: "6px" },
-  ctrlLabel: { fontSize: "13px", fontWeight: 700, color: "#334155" },
-  sel: { padding: "10px 14px", fontSize: "15px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#fff", minWidth: "180px" },
-  summary: { marginLeft: "auto", fontSize: "15px", color: "#475569", alignSelf: "center" },
-  chartCard: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "24px 20px", marginBottom: "20px", minHeight: "200px" },
-  chartTitle: { fontSize: "16px", fontWeight: 700, color: "#1e293b", marginBottom: "16px", textAlign: "center" },
-  center: { textAlign: "center", padding: "60px", fontSize: "16px", color: "#64748b" },
-  errMsg: { textAlign: "center", padding: "60px", fontSize: "15px", color: "#dc2626" },
-  tableCard: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", overflow: "hidden", marginBottom: "40px" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "12px 18px", fontSize: "13px", fontWeight: 700, color: "#475569", background: "#f8fafc", borderBottom: "2px solid #e2e8f0", textAlign: "left" },
-  td: { padding: "11px 18px", fontSize: "15px", color: "#1e293b", borderBottom: "1px solid #f1f5f9" },
-  trEven: { background: "#fafafa" },
-};

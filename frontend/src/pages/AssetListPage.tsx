@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAssets, downloadAssets } from "../api/assets";
 import type { Asset, AssetListResponse, AssetFilters } from "../types/asset";
@@ -7,6 +6,7 @@ import AssetCard from "../components/AssetCard";
 import type { ViewMode } from "../components/AssetCard";
 import FilterBar from "../components/FilterBar";
 import Pagination from "../components/Pagination";
+import { useAdmin } from "../contexts/AdminContext";
 
 const LIMIT = 50;
 const INIT_FILTERS: AssetFilters = { search: "", asset_category: "", hardware: "", genre: "", sort_by: "name", sort_dir: "asc" };
@@ -27,6 +27,11 @@ const GRID_COLS: Record<ViewMode, string> = {
 
 export default function AssetListPage() {
   const navigate = useNavigate();
+  const { isAdmin, enterAdmin, exitAdmin } = useAdmin();
+  const [showPwModal, setShowPwModal] = useState(false);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
   const [data, setData] = useState<AssetListResponse | null>(null);
   const [filters, setFilters] = useState<AssetFilters>(() => {
     try {
@@ -84,6 +89,30 @@ export default function AssetListPage() {
 
   const handleFilterChange = (f: AssetFilters) => { setFilters(f); setPage(1); };
 
+  const handleAdminToggle = () => {
+    if (isAdmin) {
+      exitAdmin();
+    } else {
+      setPwInput("");
+      setPwError("");
+      setShowPwModal(true);
+    }
+  };
+
+  const handlePwSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwLoading(true);
+    setPwError("");
+    const error = await enterAdmin(pwInput);
+    setPwLoading(false);
+    if (error === null) {
+      setShowPwModal(false);
+      setPwInput("");
+    } else {
+      setPwError(error);
+    }
+  };
+
   const handleDownload = async () => {
     setDownloading(true);
     setDlError("");
@@ -102,19 +131,44 @@ export default function AssetListPage() {
   };
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <div>
-          <h1 style={styles.title}>ゲーム資産管理</h1>
-          <p style={styles.sub}>{data ? `全 ${data.total} 件` : "読み込み中..."}</p>
+    <div className="max-w-[1400px] mx-auto px-6 py-7 min-h-screen">
+      {showPwModal && (
+        <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center" onClick={() => setShowPwModal(false)}>
+          <div className="bg-white rounded-2xl p-8 w-full max-w-[400px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="m-0 mb-2 text-xl font-extrabold text-slate-900">管理者モードに切り替え</h2>
+            <p className="m-0 mb-5 text-sm text-slate-500">管理者パスワードを入力してください</p>
+            <form onSubmit={handlePwSubmit}>
+              <input
+                className="w-full py-3 px-3.5 text-[15px] border border-slate-300 rounded-lg mb-2.5"
+                type="password"
+                value={pwInput}
+                onChange={(e) => setPwInput(e.target.value)}
+                placeholder="パスワード"
+                autoFocus
+              />
+              {pwError && <div className="text-[13px] text-red-600 mb-2.5 font-semibold">{pwError}</div>}
+              <div className="flex gap-2.5 justify-end mt-2">
+                <button type="button" className="py-2.5 px-5 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer text-slate-500" onClick={() => setShowPwModal(false)}>キャンセル</button>
+                <button type="submit" className="py-2.5 px-6 text-sm font-bold rounded-lg bg-blue-600 text-white cursor-pointer disabled:opacity-50" disabled={pwLoading || !pwInput}>
+                  {pwLoading ? "確認中..." : "切り替え"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-          {/* ビュー切り替え */}
-          <div style={styles.viewToggle}>
+      )}
+
+      <header className="flex justify-between items-start mb-1 flex-wrap gap-3">
+        <div>
+          <h1 className="m-0 text-[26px] font-extrabold text-slate-900">ゲーム資産管理</h1>
+          <p className="mt-1 m-0 text-[15px] text-slate-500">{data ? `全 ${data.total} 件` : "読み込み中..."}</p>
+        </div>
+        <div className="flex gap-2.5 items-center flex-wrap">
+          <div className="flex border border-slate-200 rounded-lg overflow-hidden">
             {VIEW_OPTIONS.map(({ mode, label }) => (
               <button
                 key={mode}
-                style={{ ...styles.viewBtn, ...(viewMode === mode ? styles.viewBtnActive : {}) }}
+                className={`px-3.5 py-2.5 text-[13px] font-semibold border-r border-slate-200 cursor-pointer whitespace-nowrap last:border-r-0${viewMode === mode ? " bg-teal-700 text-white" : " bg-white text-slate-500"}`}
                 onClick={() => setViewMode(mode)}
               >
                 {label}
@@ -122,39 +176,51 @@ export default function AssetListPage() {
             ))}
           </div>
 
-          <button style={styles.statsBtn} onClick={() => navigate("/stats")}>📊 集計</button>
+          <button className="px-5 py-3 text-base font-bold bg-white text-gray-700 border border-slate-200 rounded-xl cursor-pointer whitespace-nowrap" onClick={() => navigate("/stats")}>📊 集計</button>
 
-          <div style={styles.dlGroup}>
-            <select style={styles.dlSelect} value={dlFormat} onChange={(e) => setDlFormat(e.target.value as "csv" | "json")}>
+          <div className="flex border border-slate-200 rounded-xl overflow-hidden">
+            <select className="py-3 px-2.5 text-sm border-r border-slate-200 bg-slate-50 cursor-pointer text-gray-700" value={dlFormat} onChange={(e) => setDlFormat(e.target.value as "csv" | "json")}>
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
             </select>
-            <button style={styles.dlBtn} onClick={handleDownload} disabled={downloading}>
+            <button className="py-3 px-4 text-sm font-bold bg-white cursor-pointer text-gray-700 whitespace-nowrap" onClick={handleDownload} disabled={downloading}>
               {downloading ? "処理中..." : "⬇ ダウンロード"}
             </button>
           </div>
 
-          <button style={styles.addBtn} onClick={() => navigate("/register")}>＋ 資産を登録する</button>
+          {isAdmin && (
+            <button className="px-6 py-3 text-base font-bold bg-blue-600 text-white rounded-xl cursor-pointer whitespace-nowrap" onClick={() => navigate("/register")}>＋ 資産を登録する</button>
+          )}
+
+          <button
+            className={`px-5 py-3 text-sm font-bold border rounded-xl cursor-pointer whitespace-nowrap${isAdmin ? " bg-red-50 text-red-600 border-red-300" : " bg-white text-slate-500 border-slate-200"}`}
+            onClick={handleAdminToggle}
+          >
+            {isAdmin ? "🔓 管理者モード中（終了）" : "🔒 管理者モード"}
+          </button>
         </div>
       </header>
 
-      {dlError && <div style={styles.dlError}>{dlError}</div>}
-      {loadError && <div style={styles.dlError}>{loadError}</div>}
+      {dlError && <div className="bg-red-50 border border-red-200 rounded-lg py-2.5 px-4 text-red-600 text-sm mt-2">{dlError}</div>}
+      {loadError && <div className="bg-red-50 border border-red-200 rounded-lg py-2.5 px-4 text-red-600 text-sm mt-2">{loadError}</div>}
 
       <FilterBar filters={filters} onChange={handleFilterChange} />
 
       {loading ? (
-        <div style={styles.center}>読み込み中...</div>
+        <div className="text-center p-20 text-base text-slate-500">読み込み中...</div>
       ) : data && data.items.length === 0 ? (
-        <div style={styles.empty}>
-          <div style={{ fontSize: "60px", marginBottom: "12px" }}>📂</div>
-          <div style={{ fontSize: "18px", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>資産が見つかりません</div>
-          <div style={{ fontSize: "15px", color: "#94a3b8" }}>検索条件を変更するか、新しい資産を登録してください</div>
+        <div className="text-center py-20 px-5">
+          <div className="text-6xl mb-3">📂</div>
+          <div className="text-lg font-bold text-slate-700 mb-2">資産が見つかりません</div>
+          <div className="text-[15px] text-slate-400">検索条件を変更するか、新しい資産を登録してください</div>
         </div>
       ) : (
         <>
           {viewMode === "grid" && (
-            <div style={styles.gridHeader}>
+            <div
+              className="grid gap-3 px-3.5 py-1.5 text-xs font-bold text-slate-500 border-b-2 border-slate-200 mb-1"
+              style={{ gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 95px 24px" }}
+            >
               <div />
               <div>資産名</div>
               <div>種類</div>
@@ -162,16 +228,20 @@ export default function AssetListPage() {
               <div>ジャンル</div>
               <div>エディション</div>
               <div>状態</div>
-              <div style={{ textAlign: "right" }}>評価額</div>
+              <div className="text-right">評価額</div>
               <div />
             </div>
           )}
-          <div style={{ ...styles.grid, gridTemplateColumns: GRID_COLS[viewMode], gap: viewMode === "grid" ? "6px" : "16px" }}>
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: GRID_COLS[viewMode], gap: viewMode === "grid" ? "6px" : "16px" }}
+          >
             {(data?.items ?? []).map((asset: Asset) => (
               <AssetCard
                 key={asset.id}
                 asset={asset}
                 viewMode={viewMode}
+                isAdmin={isAdmin}
                 onClick={(id) => navigate(`/assets/${id}/edit`)}
               />
             ))}
@@ -184,42 +254,3 @@ export default function AssetListPage() {
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  page: { maxWidth: "1400px", margin: "0 auto", padding: "28px 24px", background: "#f0fdf4", minHeight: "100vh" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px", flexWrap: "wrap", gap: "12px" },
-  title: { margin: 0, fontSize: "26px", fontWeight: 800, color: "#0f172a" },
-  sub: { margin: "4px 0 0", fontSize: "15px", color: "#64748b" },
-  viewToggle: { display: "flex", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" },
-  viewBtn: {
-    padding: "10px 14px", fontSize: "13px", fontWeight: 600,
-    border: "none", borderRight: "1px solid #e2e8f0", background: "#fff",
-    cursor: "pointer", color: "#64748b", whiteSpace: "nowrap",
-  } as CSSProperties,
-  viewBtnActive: { background: "#0f766e", color: "#fff" },
-  statsBtn: {
-    padding: "12px 20px", fontSize: "16px", fontWeight: 700,
-    background: "#fff", color: "#374151", border: "1px solid #e2e8f0", borderRadius: "10px", cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  addBtn: {
-    padding: "12px 24px", fontSize: "16px", fontWeight: 700,
-    background: "#2563eb", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  grid: { display: "grid", gap: "8px" },
-  gridHeader: {
-    display: "grid",
-    gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 95px 24px",
-    gap: "12px",
-    padding: "6px 14px",
-    fontSize: "12px", fontWeight: 700, color: "#64748b",
-    borderBottom: "2px solid #e2e8f0", marginBottom: "4px",
-  } as CSSProperties,
-  center: { textAlign: "center", padding: "80px", fontSize: "16px", color: "#64748b" },
-  empty: { textAlign: "center", padding: "80px 20px" },
-  dlError: { background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 16px", color: "#dc2626", fontSize: "14px", marginTop: "8px" },
-  dlGroup: { display: "flex", border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden" },
-  dlSelect: { padding: "12px 10px", fontSize: "14px", border: "none", borderRight: "1px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", color: "#374151" },
-  dlBtn: { padding: "12px 16px", fontSize: "14px", fontWeight: 700, border: "none", background: "#fff", cursor: "pointer", color: "#374151", whiteSpace: "nowrap" },
-};

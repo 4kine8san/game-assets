@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 interface Props {
   page: number;
   totalPages: number;
@@ -24,28 +22,32 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
     pages.push(totalPages);
   }
 
+  const btnBase = "py-2.5 px-[15px] text-[15px] border rounded-lg cursor-pointer";
+
   return (
-    <div style={styles.wrap}>
-      <span style={styles.info}>{from}～{to} 件 / 全{total}件</span>
-      <div style={styles.btns}>
-        <button style={{ ...styles.btn, ...(page === 1 ? styles.dis : {}) }} disabled={page === 1} onClick={() => onPageChange(page - 1)}>‹ 前へ</button>
+    <div className="flex items-center justify-between py-5 flex-wrap gap-2.5">
+      <span className="text-[15px] text-slate-500">{from}～{to} 件 / 全{total}件</span>
+      <div className="flex gap-1.5 items-center">
+        <button
+          className={`${btnBase} border-slate-200 bg-white text-gray-700${page === 1 ? " opacity-40 cursor-not-allowed" : ""}`}
+          disabled={page === 1}
+          onClick={() => onPageChange(page - 1)}
+        >‹ 前へ</button>
         {pages.map((p, i) =>
           p === "…"
-            ? <span key={`d${i}`} style={styles.dot}>…</span>
-            : <button key={p} style={{ ...styles.btn, ...(p === page ? styles.active : {}) }} onClick={() => onPageChange(p as number)}>{p}</button>
+            ? <span key={`d${i}`} className="px-1 text-slate-400">…</span>
+            : <button
+                key={p}
+                className={`${btnBase}${p === page ? " bg-blue-600 text-white border-blue-600 font-bold" : " bg-white border-slate-200 text-gray-700"}`}
+                onClick={() => onPageChange(p as number)}
+              >{p}</button>
         )}
-        <button style={{ ...styles.btn, ...(page === totalPages ? styles.dis : {}) }} disabled={page === totalPages} onClick={() => onPageChange(page + 1)}>次へ ›</button>
+        <button
+          className={`${btnBase} border-slate-200 bg-white text-gray-700${page === totalPages ? " opacity-40 cursor-not-allowed" : ""}`}
+          disabled={page === totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >次へ ›</button>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  wrap: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0", flexWrap: "wrap", gap: "10px" },
-  info: { fontSize: "15px", color: "#64748b" },
-  btns: { display: "flex", gap: "6px", alignItems: "center" },
-  btn: { padding: "9px 15px", fontSize: "15px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#374151" },
-  active: { background: "#2563eb", color: "#fff", borderColor: "#2563eb", fontWeight: 700 },
-  dis: { opacity: 0.4, cursor: "not-allowed" },
-  dot: { padding: "0 4px", color: "#94a3b8" },
-};

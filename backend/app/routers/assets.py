@@ -37,7 +37,7 @@ def _verify_image(data: bytes, filename: str) -> None:
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(422, f"無効な画像ファイルです: {filename}")
+        raise HTTPException(422, "無効な画像ファイルです")
 
 
 def make_thumbnail(src: bytes) -> bytes | None:
@@ -201,25 +201,25 @@ def download_assets(
 def get_asset(asset_id: int, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "Asset not found")
+        raise HTTPException(404, "資産が見つかりません")
     return build_asset(asset)
 
 
 # ── create ───────────────────────────────────────────────
 @router.post("", response_model=AssetResponse, status_code=201)
 async def create_asset(
-    name: str = Form(...),
-    asset_category: str = Form("consumer"),
-    hardware: str | None = Form(None),
-    maker: str | None = Form(None),
-    genre: str | None = Form(None),
-    edition: str | None = Form(None),
-    official_url: str | None = Form(None),
-    release_year: str | None = Form(None),
-    condition: str | None = Form(None),
-    asset_value: int | None = Form(None),
-    tags: str | None = Form(None),
-    description: str | None = Form(None),
+    name: str = Form(..., max_length=255),
+    asset_category: str = Form("consumer", max_length=50),
+    hardware: str | None = Form(None, max_length=100),
+    maker: str | None = Form(None, max_length=255),
+    genre: str | None = Form(None, max_length=100),
+    edition: str | None = Form(None, max_length=100),
+    official_url: str | None = Form(None, max_length=2048),
+    release_year: str | None = Form(None, max_length=10),
+    condition: str | None = Form(None, max_length=50),
+    asset_value: int | None = Form(None, ge=0, le=2_000_000_000),
+    tags: str | None = Form(None, max_length=1000),
+    description: str | None = Form(None, max_length=5000),
     photos: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
@@ -273,7 +273,7 @@ async def create_asset(
 def update_asset(asset_id: int, data: AssetUpdate, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "Asset not found")
+        raise HTTPException(404, "資産が見つかりません")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(asset, k, v)
     db.commit()
@@ -286,7 +286,7 @@ def update_asset(asset_id: int, data: AssetUpdate, db: Session = Depends(get_db)
 def delete_asset(asset_id: int, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "Asset not found")
+        raise HTTPException(404, "資産が見つかりません")
     asset.deleted_at = datetime.now(UTC)
     db.commit()
 
@@ -300,7 +300,7 @@ async def add_photos(
 ):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "Asset not found")
+        raise HTTPException(404, "資産が見つかりません")
 
     uploaded: list[tuple[str, bytes]] = []
     for photo_file in photos:
@@ -375,7 +375,7 @@ def rotate_photo(
 def reorder_photos(asset_id: int, body: PhotoReorderRequest, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "Asset not found")
+        raise HTTPException(404, "資産が見つかりません")
     photo_map = {p.id: p for p in asset.photos}
     for order, pid in enumerate(body.photo_ids):
         if pid in photo_map:

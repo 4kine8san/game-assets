@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import type { CSSProperties } from "react";
 import type { PhotoItem } from "./photoUtils";
 
 interface Props {
@@ -44,50 +43,51 @@ export default function PhotoUpload({ photos, onChange }: Props) {
   return (
     <div>
       <div
-        style={styles.dropZone}
+        className="border-2 border-dashed border-slate-400 rounded-xl p-7 flex flex-col items-center gap-1.5 cursor-pointer bg-slate-50"
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
       >
-        <span style={styles.icon}>📷</span>
-        <span style={styles.text}>クリックまたはドラッグ＆ドロップで写真を追加</span>
-        <span style={styles.hint}>複数選択可 ／ 1枚目がサムネイルになります</span>
+        <span className="text-4xl">📷</span>
+        <span className="text-[15px] font-semibold text-slate-700">クリックまたはドラッグ＆ドロップで写真を追加</span>
+        <span className="text-[13px] text-slate-400">複数選択可 ／ 1枚目がサムネイルになります</span>
         <input
           ref={inputRef} type="file" accept="image/*" multiple
-          style={{ display: "none" }}
+          className="hidden"
           onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
         />
       </div>
 
       {photos.length > 0 && (
-        <div style={styles.list}>
+        <div className="mt-3.5 flex flex-col gap-2.5">
           {photos.map((item, idx) => (
-            <div key={item.id} style={styles.row}>
-              <div style={styles.badge}>
+            <div key={item.id} className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-lg py-2.5 px-3.5">
+              <div className="w-[72px] text-center shrink-0">
                 {idx === 0
-                  ? <span style={styles.thumbBadge}>サムネイル</span>
-                  : <span style={styles.numBadge}>{idx + 1}</span>}
+                  ? <span className="bg-blue-600 text-white text-[11px] font-bold py-0.5 px-2 rounded-full">サムネイル</span>
+                  : <span className="text-sm text-slate-500 font-semibold">{idx + 1}</span>}
               </div>
 
-              <div style={styles.previewWrap}>
+              <div className="w-[70px] h-[70px] overflow-hidden rounded-md shrink-0 flex items-center justify-center bg-slate-100">
                 <img
                   src={item.previewUrl}
                   alt={item.file.name}
-                  style={{ ...styles.preview, transform: `rotate(${item.rotation}deg)` }}
+                  className="w-[70px] h-[70px] object-cover transition-transform duration-200"
+                  style={{ transform: `rotate(${item.rotation}deg)` }}
                 />
               </div>
 
-              <span style={styles.fname}>{item.file.name}</span>
+              <span className="flex-1 text-sm text-slate-600 overflow-hidden text-ellipsis whitespace-nowrap">{item.file.name}</span>
               {item.rotation !== 0 && (
-                <span style={styles.rotLabel}>{item.rotation}°</span>
+                <span className="text-xs text-blue-600 font-bold bg-blue-50 py-0.5 px-2 rounded-full shrink-0">{item.rotation}°</span>
               )}
 
-              <div style={styles.actions}>
-                <button type="button" style={styles.rotBtn} onClick={() => rotate(item.id, -90)} title="左90°回転">↺</button>
-                <button type="button" style={styles.rotBtn} onClick={() => rotate(item.id, 90)} title="右90°回転">↻</button>
-                <button type="button" style={styles.arrowBtn} onClick={() => move(idx, -1)} disabled={idx === 0} title="上へ">▲</button>
-                <button type="button" style={styles.arrowBtn} onClick={() => move(idx, 1)} disabled={idx === photos.length - 1} title="下へ">▼</button>
-                <button type="button" style={styles.delBtn} onClick={() => remove(item.id)} title="削除">✕</button>
+              <div className="flex gap-1.5 shrink-0">
+                <button type="button" className="w-[34px] h-[34px] border border-blue-200 rounded-md bg-blue-50 cursor-pointer text-base text-blue-600 font-bold" onClick={() => rotate(item.id, -90)} title="左90°回転">↺</button>
+                <button type="button" className="w-[34px] h-[34px] border border-blue-200 rounded-md bg-blue-50 cursor-pointer text-base text-blue-600 font-bold" onClick={() => rotate(item.id, 90)} title="右90°回転">↻</button>
+                <button type="button" className="w-[34px] h-[34px] border border-slate-200 rounded-md bg-slate-50 cursor-pointer text-[13px] text-slate-600 disabled:opacity-40" onClick={() => move(idx, -1)} disabled={idx === 0} title="上へ">▲</button>
+                <button type="button" className="w-[34px] h-[34px] border border-slate-200 rounded-md bg-slate-50 cursor-pointer text-[13px] text-slate-600 disabled:opacity-40" onClick={() => move(idx, 1)} disabled={idx === photos.length - 1} title="下へ">▼</button>
+                <button type="button" className="w-[34px] h-[34px] border-none rounded-md bg-red-100 cursor-pointer text-sm text-red-600" onClick={() => remove(item.id)} title="削除">✕</button>
               </div>
             </div>
           ))}
@@ -96,30 +96,3 @@ export default function PhotoUpload({ photos, onChange }: Props) {
     </div>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  dropZone: {
-    border: "2px dashed #94a3b8", borderRadius: "10px", padding: "28px",
-    display: "flex", flexDirection: "column", alignItems: "center", gap: "6px",
-    cursor: "pointer", background: "#f8fafc",
-  },
-  icon: { fontSize: "36px" },
-  text: { fontSize: "15px", fontWeight: 600, color: "#334155" },
-  hint: { fontSize: "13px", color: "#94a3b8" },
-  list: { marginTop: "14px", display: "flex", flexDirection: "column", gap: "10px" },
-  row: {
-    display: "flex", alignItems: "center", gap: "10px",
-    background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 14px",
-  },
-  badge: { width: "72px", textAlign: "center", flexShrink: 0 },
-  thumbBadge: { background: "#2563eb", color: "#fff", fontSize: "11px", fontWeight: 700, padding: "3px 8px", borderRadius: "999px" },
-  numBadge: { fontSize: "14px", color: "#64748b", fontWeight: 600 },
-  previewWrap: { width: "70px", height: "70px", overflow: "hidden", borderRadius: "6px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f9" },
-  preview: { width: "70px", height: "70px", objectFit: "cover", transition: "transform 0.2s" },
-  fname: { flex: 1, fontSize: "14px", color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  rotLabel: { fontSize: "12px", color: "#2563eb", fontWeight: 700, background: "#eff6ff", padding: "2px 8px", borderRadius: "999px", flexShrink: 0 },
-  actions: { display: "flex", gap: "5px", flexShrink: 0 },
-  rotBtn: { width: "34px", height: "34px", border: "1px solid #bfdbfe", borderRadius: "6px", background: "#eff6ff", cursor: "pointer", fontSize: "16px", color: "#2563eb", fontWeight: 700 },
-  arrowBtn: { width: "34px", height: "34px", border: "1px solid #e2e8f0", borderRadius: "6px", background: "#f8fafc", cursor: "pointer", fontSize: "13px", color: "#475569" },
-  delBtn: { width: "34px", height: "34px", border: "none", borderRadius: "6px", background: "#fee2e2", cursor: "pointer", fontSize: "14px", color: "#dc2626" },
-};

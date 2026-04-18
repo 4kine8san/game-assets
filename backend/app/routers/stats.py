@@ -49,9 +49,9 @@ def aggregate(
     db: Session = Depends(get_db),
 ):
     if x_axis not in X_AXIS_COLS:
-        raise HTTPException(400, f"x_axis must be one of {list(X_AXIS_COLS)}")
+        raise HTTPException(400, "不正なパラメータです")
     if y_axis not in Y_AXIS_LABELS:
-        raise HTTPException(400, f"y_axis must be one of {list(Y_AXIS_LABELS)}")
+        raise HTTPException(400, "不正なパラメータです")
 
     col = X_AXIS_COLS[x_axis]
 

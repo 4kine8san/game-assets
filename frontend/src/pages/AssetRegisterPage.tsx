@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { createAsset } from "../api/assets";
 import { searchGameInfo } from "../api/search";
@@ -99,62 +98,65 @@ export default function AssetRegisterPage() {
     }
   };
 
+  const inputClass = "w-full py-3 px-3.5 text-[15px] border border-slate-300 rounded-lg box-border";
+  const selectClass = "w-full py-3 px-3.5 text-[15px] border border-slate-300 rounded-lg bg-white box-border";
+
   return (
-    <div style={styles.page}>
-      <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={() => navigate("/")}>← 一覧に戻る</button>
-        <h1 style={styles.title}>ゲーム資産を登録</h1>
+    <div className="max-w-[820px] mx-auto px-6 py-7 min-h-screen">
+      <div className="flex items-center gap-4 mb-5">
+        <button className="py-2.5 px-4 text-[15px] border border-slate-200 rounded-lg bg-white cursor-pointer text-slate-600 whitespace-nowrap" onClick={() => navigate("/")}>← 一覧に戻る</button>
+        <h1 className="m-0 text-[22px] font-extrabold text-slate-900">ゲーム資産を登録</h1>
       </div>
 
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.card}>
-          <h2 style={styles.section}>基本情報</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="bg-white border border-slate-200 rounded-[14px] p-6 px-7">
+          <h2 className="m-0 mb-5 text-[17px] font-bold text-slate-800 border-b-2 border-slate-200 pb-2.5">基本情報</h2>
 
           <Field label="資産名" required>
-            <div style={styles.nameRow}>
-              <input style={{ ...styles.input, flex: 1 }} value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="例: ストリートファイターII" />
-              <button type="button" style={styles.searchBtn} onClick={handleSearch} disabled={searching}>
+            <div className="flex gap-2.5 items-stretch">
+              <input className={`${inputClass} flex-1`} value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="例: ストリートファイターII" />
+              <button type="button" className="px-4 text-sm font-bold border-none rounded-lg bg-teal-700 text-white cursor-pointer whitespace-nowrap" onClick={handleSearch} disabled={searching}>
                 {searching ? "検索中..." : "🔍 情報を自動入力"}
               </button>
             </div>
             {searchMsg && (
-              <div style={{ ...styles.searchMsg, color: searchMsg.includes("失敗") || searchMsg.includes("見つかり") || searchMsg.includes("入力") && !searchMsg.includes("しました") ? "#dc2626" : "#16a34a" }}>
+              <div className={`mt-1.5 text-[13px] font-semibold${searchMsg.includes("失敗") || searchMsg.includes("見つかり") || (searchMsg.includes("入力") && !searchMsg.includes("しました")) ? " text-red-600" : " text-green-600"}`}>
                 {searchMsg}
               </div>
             )}
           </Field>
 
           <Field label="種類" required>
-            <div style={styles.radioGroup}>
+            <div className="flex gap-6">
               {category.map((o) => (
-                <label key={o.value} style={styles.radioLabel}>
+                <label key={o.value} className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" value={o.value} checked={form.asset_category === o.value} onChange={() => set("asset_category", o.value as FormState["asset_category"])} />
-                  <span style={styles.radioText}>{o.label}</span>
+                  <span className="text-[15px] text-slate-700">{o.label}</span>
                 </label>
               ))}
             </div>
           </Field>
 
           <Field label="ハード">
-            <select style={styles.select} value={form.hardware} onChange={(e) => set("hardware", e.target.value)}>
+            <select className={selectClass} value={form.hardware} onChange={(e) => set("hardware", e.target.value)}>
               <option value="">選択してください</option>
               {hardware.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
 
           <Field label="ゲームメーカー">
-            <input style={styles.input} value={form.maker} onChange={(e) => set("maker", e.target.value)} placeholder="例: カプコン、任天堂、セガ" />
+            <input className={inputClass} value={form.maker} onChange={(e) => set("maker", e.target.value)} placeholder="例: カプコン、任天堂、セガ" />
           </Field>
 
-          <div style={styles.row2}>
+          <div className="grid grid-cols-2 gap-4">
             <Field label="ジャンル">
-              <select style={styles.select} value={form.genre} onChange={(e) => set("genre", e.target.value)}>
+              <select className={selectClass} value={form.genre} onChange={(e) => set("genre", e.target.value)}>
                 <option value="">選択してください</option>
                 {genre.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </Field>
             <Field label="エディション">
-              <select style={styles.select} value={form.edition} onChange={(e) => set("edition", e.target.value)}>
+              <select className={selectClass} value={form.edition} onChange={(e) => set("edition", e.target.value)}>
                 <option value="">選択してください</option>
                 {edition.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -162,15 +164,15 @@ export default function AssetRegisterPage() {
           </div>
 
           <Field label="公式サイト URL">
-            <input style={styles.input} type="url" value={form.official_url} onChange={(e) => set("official_url", e.target.value)} placeholder="https://..." />
+            <input className={inputClass} type="url" value={form.official_url} onChange={(e) => set("official_url", e.target.value)} placeholder="https://..." />
           </Field>
 
           <Field label="販売年">
-            <input style={styles.input} value={form.release_year} onChange={(e) => set("release_year", e.target.value)} placeholder="例: 1992" maxLength={10} />
+            <input className={inputClass} value={form.release_year} onChange={(e) => set("release_year", e.target.value)} placeholder="例: 1992" maxLength={10} />
           </Field>
 
           <Field label="状態">
-            <select style={styles.select} value={form.condition} onChange={(e) => set("condition", e.target.value)}>
+            <select className={selectClass} value={form.condition} onChange={(e) => set("condition", e.target.value)}>
               <option value="">選択してください</option>
               {condition.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -178,7 +180,7 @@ export default function AssetRegisterPage() {
 
           <Field label="資産評価額（円）">
             <input
-              style={styles.input}
+              className={inputClass}
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
@@ -189,24 +191,24 @@ export default function AssetRegisterPage() {
           </Field>
 
           <Field label="タグ" hint="カンマ区切りで複数入力できます（例: 格闘, カプコン, 名作）">
-            <input style={styles.input} value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="格闘, カプコン, 名作" />
+            <input className={inputClass} value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="格闘, カプコン, 名作" />
           </Field>
 
           <Field label="説明">
-            <textarea style={styles.textarea} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="ゲームの説明を入力してください..." rows={4} />
+            <textarea className="w-full py-3 px-3.5 text-[15px] border border-slate-300 rounded-lg resize-y box-border" value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="ゲームの説明を入力してください..." rows={4} />
           </Field>
         </div>
 
-        <div style={styles.card}>
-          <h2 style={styles.section}>写真</h2>
+        <div className="bg-white border border-slate-200 rounded-[14px] p-6 px-7">
+          <h2 className="m-0 mb-5 text-[17px] font-bold text-slate-800 border-b-2 border-slate-200 pb-2.5">写真</h2>
           <PhotoUpload photos={photos} onChange={setPhotos} />
         </div>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 px-[18px] text-red-600 text-[15px]">{error}</div>}
 
-        <div style={styles.btnRow}>
-          <button type="button" style={styles.cancelBtn} onClick={() => navigate("/")}>キャンセル</button>
-          <button type="submit" style={styles.submitBtn} disabled={loading}>
+        <div className="flex gap-3 justify-end pb-10">
+          <button type="button" className="py-3.5 px-7 text-base border border-slate-200 rounded-xl bg-slate-50 cursor-pointer text-slate-500" onClick={() => navigate("/")}>キャンセル</button>
+          <button type="submit" className="py-3.5 px-9 text-base font-bold border-none rounded-xl bg-blue-600 text-white cursor-pointer disabled:opacity-60" disabled={loading}>
             {loading ? "登録中..." : "登録する"}
           </button>
         </div>
@@ -219,43 +221,13 @@ function Field({ label, required, hint, children }: {
   label: string; required?: boolean; hint?: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: "18px" }}>
-      <label style={fld.label}>
+    <div className="mb-[18px]">
+      <label className="block text-[15px] font-bold text-slate-700 mb-1.5">
         {label}
-        {required && <span style={fld.req}>必須</span>}
+        {required && <span className="ml-2 text-[11px] bg-red-600 text-white py-0.5 px-[7px] rounded-full font-bold">必須</span>}
       </label>
-      {hint && <div style={fld.hint}>{hint}</div>}
+      {hint && <div className="text-[13px] text-slate-400 mb-1.5">{hint}</div>}
       {children}
     </div>
   );
 }
-
-const fld: Record<string, CSSProperties> = {
-  label: { display: "block", fontSize: "15px", fontWeight: 700, color: "#334155", marginBottom: "6px" },
-  req: { marginLeft: "8px", fontSize: "11px", background: "#dc2626", color: "#fff", padding: "2px 7px", borderRadius: "999px", fontWeight: 700 },
-  hint: { fontSize: "13px", color: "#94a3b8", marginBottom: "6px" },
-};
-
-const styles: Record<string, CSSProperties> = {
-  page: { maxWidth: "820px", margin: "0 auto", padding: "28px 24px", background: "#f0fdf4", minHeight: "100vh" },
-  topBar: { display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px" },
-  backBtn: { padding: "9px 18px", fontSize: "15px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#475569", whiteSpace: "nowrap" },
-  title: { margin: 0, fontSize: "22px", fontWeight: 800, color: "#0f172a" },
-  form: { display: "flex", flexDirection: "column", gap: "20px" },
-  card: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "24px 28px" },
-  section: { margin: "0 0 20px", fontSize: "17px", fontWeight: 700, color: "#1e293b", borderBottom: "2px solid #e2e8f0", paddingBottom: "10px" },
-  input: { width: "100%", padding: "12px 14px", fontSize: "15px", border: "1px solid #cbd5e1", borderRadius: "8px", boxSizing: "border-box" } as CSSProperties,
-  select: { width: "100%", padding: "12px 14px", fontSize: "15px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#fff", boxSizing: "border-box" } as CSSProperties,
-  textarea: { width: "100%", padding: "12px 14px", fontSize: "15px", border: "1px solid #cbd5e1", borderRadius: "8px", resize: "vertical", boxSizing: "border-box" } as CSSProperties,
-  radioGroup: { display: "flex", gap: "24px" },
-  radioLabel: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" },
-  radioText: { fontSize: "15px", color: "#334155" },
-  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" },
-  error: { background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "14px 18px", color: "#dc2626", fontSize: "15px" },
-  btnRow: { display: "flex", gap: "12px", justifyContent: "flex-end", paddingBottom: "40px" },
-  cancelBtn: { padding: "13px 28px", fontSize: "16px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "#f8fafc", cursor: "pointer", color: "#64748b" },
-  submitBtn: { padding: "13px 36px", fontSize: "16px", fontWeight: 700, border: "none", borderRadius: "10px", background: "#2563eb", color: "#fff", cursor: "pointer" },
-  nameRow: { display: "flex", gap: "10px", alignItems: "stretch" },
-  searchBtn: { padding: "0 18px", fontSize: "14px", fontWeight: 700, border: "none", borderRadius: "8px", background: "#0f766e", color: "#fff", cursor: "pointer", whiteSpace: "nowrap" },
-  searchMsg: { marginTop: "6px", fontSize: "13px", fontWeight: 600 },
-};

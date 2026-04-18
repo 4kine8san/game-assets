@@ -1,3 +1,5 @@
+import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,15 +8,21 @@ load_dotenv()
 
 from . import models  # noqa: E402, F401 — registers all models before create_all
 from .database import Base, engine  # noqa: E402
-from .routers import assets, masters, photos, search, stats  # noqa: E402
+from .routers import admin, assets, masters, photos, search, stats  # noqa: E402
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ゲーム資産管理", version="2.0.0")
 
+_cors_origins = [
+    o.strip()
+    for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
@@ -31,6 +39,7 @@ async def security_headers(request: Request, call_next) -> Response:
     return response
 
 
+app.include_router(admin.router)
 app.include_router(assets.router)
 app.include_router(photos.router)
 app.include_router(masters.router)
