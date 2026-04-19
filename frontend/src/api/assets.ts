@@ -1,7 +1,7 @@
-import axios from "axios";
 import type { Asset, AssetListResponse, AssetPhoto } from "../types/asset";
+import client from "./client";
 
-const api = axios.create({ baseURL: "http://localhost:8000" });
+const api = client;
 
 export interface FetchAssetsParams {
   page?: number;

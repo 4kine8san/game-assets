@@ -22,7 +22,7 @@
 
 | 領域 | 採用技術 | 理由 |
 |------|----------|------|
-| フロントエンド | TypeScript + React (Vite) | 型安全な UI 開発 |
+| フロントエンド | TypeScript + React (Vite) + Tailwind CSS | 型安全な UI 開発 |
 | バックエンド | Python + FastAPI | 軽量かつ高速な API サーバー |
 | データベース | PostgreSQL | 正規化されたリレーショナルデータの管理 |
 | ORM | SQLAlchemy | DB 操作の抽象化とマイグレーション管理 |

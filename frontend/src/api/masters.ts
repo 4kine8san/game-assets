@@ -1,6 +1,6 @@
-import axios from "axios";
+import client from "./client";
 
-const api = axios.create({ baseURL: "http://localhost:8000" });
+const api = client;
 
 export interface MasterItem {
   value: string;

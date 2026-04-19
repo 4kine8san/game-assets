@@ -1,10 +1,20 @@
+import logging
 import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 from . import models  # noqa: E402, F401 — registers all models before create_all
 from .database import Base, engine  # noqa: E402
@@ -37,6 +47,18 @@ async def security_headers(request: Request, call_next) -> Response:
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Content-Security-Policy"] = "default-src 'none'"
     return response
+
+
+@app.exception_handler(HTTPException)
+async def log_http_exception(request: Request, exc: HTTPException) -> Response:
+    logger.warning("HTTP %s: %s %s", exc.status_code, request.method, request.url.path)
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def log_unhandled_exception(request: Request, exc: Exception) -> Response:
+    logger.exception("%s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "サーバーエラーが発生しました"})
 
 
 app.include_router(admin.router)

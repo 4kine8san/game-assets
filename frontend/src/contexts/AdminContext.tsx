@@ -31,8 +31,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
       const body = await res.json().catch(() => ({}));
       return body.detail ?? "パスワードが正しくありません";
-    } catch {
-      return "通信エラーが発生しました";
+    } catch (err) {
+      console.error("[API] POST /api/admin/verify → network error", err);
+      return "サーバーに接続できません (POST /api/admin/verify)";
     }
   }
 
