@@ -4,6 +4,8 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from ..messages import ERR_RAWG_API_ACCESS_FAILED, ERR_RAWG_API_KEY_MISSING
+
 router = APIRouter(prefix="/api/search", tags=["search"])
 
 # RAWG genre slug → our master value
@@ -38,10 +40,7 @@ class GameSearchResult(BaseModel):
 async def search_game_info(body: GameSearchRequest):
     api_key = os.getenv("RAWG_API_KEY", "").strip()
     if not api_key:
-        raise HTTPException(
-            503,
-            "RAWG_API_KEY が未設定です。バックエンドの .env に RAWG_API_KEY を設定してください。",
-        )
+        raise HTTPException(503, ERR_RAWG_API_KEY_MISSING)
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         # Step 1: search
@@ -50,7 +49,7 @@ async def search_game_info(body: GameSearchRequest):
             params={"key": api_key, "search": body.title, "page_size": 3, "search_precise": "true"},
         )
         if search_resp.status_code != 200:
-            raise HTTPException(502, "RAWG API へのアクセスに失敗しました")
+            raise HTTPException(502, ERR_RAWG_API_ACCESS_FAILED)
 
         results = search_resp.json().get("results", [])
         if not results:

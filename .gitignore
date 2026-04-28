@@ -65,6 +65,10 @@ frontend/.vite/
 *.db
 *.sqlite3
 
+# IDE
+.idea/
+
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini

@@ -11,6 +11,14 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..messages import (
+    ERR_ASSET_NOT_FOUND,
+    ERR_IMAGE_ROTATION_FAILED,
+    ERR_INVALID_DOWNLOAD_FORMAT,
+    ERR_INVALID_IMAGE,
+    ERR_PHOTO_NOT_FOUND,
+    ERR_UNSUPPORTED_FILE_FORMAT,
+)
 from ..models import Asset, AssetPhoto
 from ..schemas import (
     AssetListResponse,
@@ -33,11 +41,11 @@ def _verify_image(data: bytes, filename: str) -> None:
         with Image.open(io.BytesIO(data)) as img:
             img.verify()
         if Image.open(io.BytesIO(data)).format not in ALLOWED_PILLOW_FORMATS:
-            raise HTTPException(422, "サポートされていないファイル形式です")
+            raise HTTPException(422, ERR_UNSUPPORTED_FILE_FORMAT)
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(422, "無効な画像ファイルです")
+        raise HTTPException(422, ERR_INVALID_IMAGE)
 
 
 def make_thumbnail(src: bytes) -> bytes | None:
@@ -171,7 +179,7 @@ def download_assets(
     q = db.query(Asset).filter(Asset.deleted_at.is_(None))
     q = _apply_filters(q, search, asset_category, hardware, genre)
     if format not in ("csv", "json"):
-        raise HTTPException(400, "format は 'csv' または 'json' を指定してください")
+        raise HTTPException(400, ERR_INVALID_DOWNLOAD_FORMAT)
 
     assets = q.order_by(Asset.name.asc()).all()
 
@@ -201,7 +209,7 @@ def download_assets(
 def get_asset(asset_id: int, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "資産が見つかりません")
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
     return build_asset(asset)
 
 
@@ -273,7 +281,7 @@ async def create_asset(
 def update_asset(asset_id: int, data: AssetUpdate, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "資産が見つかりません")
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(asset, k, v)
     db.commit()
@@ -286,7 +294,7 @@ def update_asset(asset_id: int, data: AssetUpdate, db: Session = Depends(get_db)
 def delete_asset(asset_id: int, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "資産が見つかりません")
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
     asset.deleted_at = datetime.now(UTC)
     db.commit()
 
@@ -300,7 +308,7 @@ async def add_photos(
 ):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "資産が見つかりません")
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
 
     uploaded: list[tuple[str, bytes]] = []
     for photo_file in photos:
@@ -345,7 +353,7 @@ def rotate_photo(
         .first()
     )
     if not photo:
-        raise HTTPException(404, "Photo not found")
+        raise HTTPException(404, ERR_PHOTO_NOT_FOUND)
 
     degrees = body.degrees % 360
     if degrees == 0:
@@ -364,7 +372,7 @@ def rotate_photo(
         photo.file_data = buf.getvalue()
         photo.thumb_data = make_thumbnail(photo.file_data)
     except Exception as e:
-        raise HTTPException(500, "画像の回転に失敗しました") from e
+        raise HTTPException(500, ERR_IMAGE_ROTATION_FAILED) from e
 
     db.commit()
     return build_photo(photo)
@@ -375,7 +383,7 @@ def rotate_photo(
 def reorder_photos(asset_id: int, body: PhotoReorderRequest, db: Session = Depends(get_db)):
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
     if not asset:
-        raise HTTPException(404, "資産が見つかりません")
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
     photo_map = {p.id: p for p in asset.photos}
     for order, pid in enumerate(body.photo_ids):
         if pid in photo_map:
@@ -394,6 +402,6 @@ def delete_photo(asset_id: int, photo_id: int, db: Session = Depends(get_db)):
         .first()
     )
     if not photo:
-        raise HTTPException(404, "Photo not found")
+        raise HTTPException(404, ERR_PHOTO_NOT_FOUND)
     db.delete(photo)
     db.commit()

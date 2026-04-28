@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import { API_BASE_URL } from "../config";
+import { MESSAGES } from "../constants/messages";
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -10,7 +11,7 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType>({
   isAdmin: false,
-  enterAdmin: async () => "初期化エラー",
+  enterAdmin: async () => MESSAGES.ERR_ADMIN_INIT,
   exitAdmin: () => {},
 });
 
@@ -30,10 +31,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         return null;
       }
       const body = await res.json().catch(() => ({}));
-      return body.detail ?? "パスワードが正しくありません";
+      return body.detail ?? MESSAGES.ERR_ADMIN_WRONG_PASSWORD;
     } catch (err) {
       console.error("[API] POST /api/admin/verify → network error", err);
-      return "サーバーに接続できません (POST /api/admin/verify)";
+      return MESSAGES.ERR_SERVER_UNREACHABLE;
     }
   }
 

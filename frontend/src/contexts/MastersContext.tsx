@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { fetchMasters } from "../api/masters";
 import type { MasterItem } from "../api/masters";
+import { MESSAGES } from "../constants/messages";
 
 interface Masters {
   category: MasterItem[];
@@ -45,7 +46,7 @@ export function MastersProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         setMasters((prev) => ({
           ...prev,
-          mastersError: "マスタデータの取得に失敗しました。バックエンドの接続を確認してください。",
+          mastersError: MESSAGES.ERR_MASTERS_FETCH_FAILED,
         }));
       });
   }, []);

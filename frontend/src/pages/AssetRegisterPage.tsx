@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createAsset } from "../api/assets";
 import { searchGameInfo } from "../api/search";
@@ -6,6 +6,8 @@ import PhotoUpload from "../components/PhotoUpload";
 import type { PhotoItem } from "../components/photoUtils";
 import { applyRotation } from "../components/photoUtils";
 import { useMasters } from "../contexts/MastersContext";
+import { MESSAGES } from "../constants/messages";
+import { getApiErrorDetail } from "../utils/apiError";
 
 interface FormState {
   name: string;
@@ -35,19 +37,25 @@ export default function AssetRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchMsg, setSearchMsg] = useState("");
+  const [isSearchError, setIsSearchError] = useState(false);
   const [error, setError] = useState("");
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
   const handleSearch = async () => {
-    if (!form.name.trim()) { setSearchMsg("先に資産名を入力してください"); return; }
+    if (!form.name.trim()) {
+      setSearchMsg(MESSAGES.ERR_NAME_REQUIRED_FOR_SEARCH);
+      setIsSearchError(true);
+      return;
+    }
     setSearching(true);
     setSearchMsg("");
     try {
       const result = await searchGameInfo(form.name.trim());
       if (!result.found) {
-        setSearchMsg("ゲーム情報が見つかりませんでした");
+        setSearchMsg(MESSAGES.INFO_GAME_NOT_FOUND);
+        setIsSearchError(true);
         return;
       }
       setForm((f) => ({
@@ -58,17 +66,18 @@ export default function AssetRegisterPage() {
         official_url: result.official_url ?? f.official_url,
       }));
       setSearchMsg(`「${result.source_title}」の情報を入力しました`);
+      setIsSearchError(false);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setSearchMsg(msg ?? "検索に失敗しました");
+      setSearchMsg(getApiErrorDetail(e) ?? MESSAGES.ERR_SEARCH_FAILED);
+      setIsSearchError(true);
     } finally {
       setSearching(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError("資産名を入力してください"); return; }
+    if (!form.name.trim()) { setError(MESSAGES.ERR_NAME_REQUIRED); return; }
     setError("");
     setLoading(true);
     try {
@@ -92,7 +101,7 @@ export default function AssetRegisterPage() {
       await createAsset(fd);
       navigate("/");
     } catch {
-      setError("登録に失敗しました。入力内容を確認してください。");
+      setError(MESSAGES.ERR_REGISTER_FAILED);
     } finally {
       setLoading(false);
     }
@@ -120,7 +129,7 @@ export default function AssetRegisterPage() {
               </button>
             </div>
             {searchMsg && (
-              <div className={`mt-1.5 text-[13px] font-semibold${searchMsg.includes("失敗") || searchMsg.includes("見つかり") || (searchMsg.includes("入力") && !searchMsg.includes("しました")) ? " text-red-600" : " text-green-600"}`}>
+              <div className={`mt-1.5 text-[13px] font-semibold ${isSearchError ? "text-red-600" : "text-green-600"}`}>
                 {searchMsg}
               </div>
             )}

@@ -1,6 +1,7 @@
 import type { Asset } from "../types/asset";
 import { useMasters } from "../contexts/MastersContext";
 import { API_BASE_URL } from "../config";
+import { CATEGORY_LABEL } from "../constants/labels";
 
 export type ViewMode = "large" | "medium" | "small" | "grid";
 
@@ -15,9 +16,7 @@ function findLabel(opts: { value: string; label: string }[], val?: string) {
   return opts.find((o) => o.value === val)?.label ?? val ?? "";
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  arcade: "アーケード", hardware: "ハード", other: "その他", consumer: "家庭用",
-};
+
 const CATEGORY_COLOR: Record<string, string> = {
   arcade: "#dc2626", hardware: "#0891b2", other: "#7c3aed", consumer: "#2563eb",
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAssets, downloadAssets } from "../api/assets";
 import type { Asset, AssetListResponse, AssetFilters } from "../types/asset";
@@ -7,16 +7,18 @@ import type { ViewMode } from "../components/AssetCard";
 import FilterBar from "../components/FilterBar";
 import Pagination from "../components/Pagination";
 import { useAdmin } from "../contexts/AdminContext";
+import { MESSAGES } from "../constants/messages";
+import { VIEW_OPTIONS } from "../constants/labels";
 
 const LIMIT = 50;
-const INIT_FILTERS: AssetFilters = { search: "", asset_category: "", hardware: "", genre: "", sort_by: "name", sort_dir: "asc" };
-
-const VIEW_OPTIONS: { mode: ViewMode; label: string }[] = [
-  { mode: "large", label: "大" },
-  { mode: "medium", label: "中" },
-  { mode: "small", label: "小" },
-  { mode: "grid", label: "グリッド" },
-];
+const INIT_FILTERS: AssetFilters = {
+  search: "",
+  asset_category: "",
+  hardware: "",
+  genre: "",
+  sort_by: "name",
+  sort_dir: "asc",
+};
 
 const GRID_COLS: Record<ViewMode, string> = {
   large: "repeat(auto-fill, minmax(260px, 1fr))",
@@ -67,7 +69,7 @@ export default function AssetListPage() {
       });
       setData(res);
     } catch {
-      setLoadError("データの取得に失敗しました");
+      setLoadError(MESSAGES.ERR_FETCH_FAILED);
     } finally {
       setLoading(false);
     }
@@ -99,7 +101,7 @@ export default function AssetListPage() {
     }
   };
 
-  const handlePwSubmit = async (e: React.FormEvent) => {
+  const handlePwSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPwLoading(true);
     setPwError("");
@@ -124,7 +126,7 @@ export default function AssetListPage() {
         genre: filters.genre || undefined,
       });
     } catch {
-      setDlError("ダウンロードに失敗しました");
+      setDlError(MESSAGES.ERR_DOWNLOAD_FAILED);
     } finally {
       setDownloading(false);
     }

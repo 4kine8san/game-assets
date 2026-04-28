@@ -5,20 +5,8 @@ import {
 } from "recharts";
 import { fetchStats } from "../api/stats";
 import type { StatsResponse } from "../api/stats";
-
-const X_OPTIONS = [
-  { value: "hardware", label: "ハード" },
-  { value: "genre", label: "ジャンル" },
-  { value: "asset_category", label: "種類" },
-  { value: "edition", label: "エディション" },
-  { value: "release_year", label: "販売年" },
-];
-
-const Y_OPTIONS = [
-  { value: "count", label: "資産数" },
-  { value: "total_value", label: "合計評価額（円）" },
-  { value: "avg_value", label: "平均評価額（円）" },
-];
+import { MESSAGES } from "../constants/messages";
+import { STATS_X_OPTIONS as X_OPTIONS, STATS_Y_OPTIONS as Y_OPTIONS } from "../constants/labels";
 
 const BAR_COLORS = [
   "#16a34a", "#22c55e", "#4ade80", "#86efac", "#0d9488",
@@ -39,7 +27,7 @@ export default function AssetStatsPage() {
     try {
       setResult(await fetchStats(x, y));
     } catch {
-      setError("データの取得に失敗しました");
+      setError(MESSAGES.ERR_FETCH_FAILED);
     } finally {
       setLoading(false);
     }

@@ -43,11 +43,4 @@ export interface AssetFilters {
   sort_dir: string;
 }
 
-export const SORT_OPTIONS = [
-  { value: "name|asc", label: "資産名順（昇順）" },
-  { value: "name|desc", label: "資産名順（降順）" },
-  { value: "created_at|desc", label: "登録日（新しい順）" },
-  { value: "created_at|asc", label: "登録日（古い順）" },
-  { value: "asset_value|desc", label: "評価額（高い順）" },
-  { value: "asset_value|asc", label: "評価額（低い順）" },
-];
+export { SORT_OPTIONS } from "../constants/labels";

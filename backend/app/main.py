@@ -18,11 +18,12 @@ logger = logging.getLogger(__name__)
 
 from . import models  # noqa: E402, F401 — registers all models before create_all
 from .database import Base, engine  # noqa: E402
+from .messages import APP_TITLE, APP_VERSION, ERR_SERVER_ERROR  # noqa: E402
 from .routers import admin, assets, masters, photos, search, stats  # noqa: E402
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="ゲーム資産管理", version="2.0.0")
+app = FastAPI(title=APP_TITLE, version=APP_VERSION)
 
 _cors_origins = [
     o.strip()
@@ -58,7 +59,7 @@ async def log_http_exception(request: Request, exc: HTTPException) -> Response:
 @app.exception_handler(Exception)
 async def log_unhandled_exception(request: Request, exc: Exception) -> Response:
     logger.exception("%s %s", request.method, request.url.path)
-    return JSONResponse(status_code=500, content={"detail": "サーバーエラーが発生しました"})
+    return JSONResponse(status_code=500, content={"detail": ERR_SERVER_ERROR})
 
 
 app.include_router(admin.router)
