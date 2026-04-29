@@ -11,6 +11,7 @@ ERR_INVALID_DOWNLOAD_FORMAT = "format は 'csv' または 'json' を指定して
 
 # Asset
 ERR_ASSET_NOT_FOUND = "資産が見つかりません"
+COPY_NAME_SUFFIX = " のコピー"
 ERR_PHOTO_NOT_FOUND = "写真が見つかりません"
 ERR_THUMBNAIL_NOT_FOUND = "サムネイルが見つかりません"
 ERR_IMAGE_ROTATION_FAILED = "画像の回転に失敗しました"

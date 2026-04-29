@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, type SubmitEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { searchGameInfo } from "../api/search";
 import {
-  fetchAsset, updateAsset, deleteAsset,
+  fetchAsset, updateAsset, deleteAsset, copyAsset,
   addPhotos, rotatePhoto, reorderPhotos, deletePhoto as apiDeletePhoto,
 } from "../api/assets";
 import type { AssetPhoto } from "../types/asset";
@@ -217,6 +217,16 @@ export default function AssetEditPage() {
     }
   };
 
+  const handleCopy = async () => {
+    if (!confirm(`「${form.name}」のコピーを作成します。写真はコピーされません。\n続けますか？`)) return;
+    try {
+      const copied = await copyAsset(assetId);
+      navigate(`/assets/${copied.id}/edit`);
+    } catch {
+      setError(MESSAGES.ERR_COPY_FAILED);
+    }
+  };
+
   if (loading) return <div className="text-center p-20 text-base text-slate-500">読み込み中...</div>;
 
   const visiblePhotos = existingPhotos.filter((p) => !p.deleted);
@@ -231,6 +241,7 @@ export default function AssetEditPage() {
         <button className="py-2.5 px-4 text-[15px] border border-slate-200 rounded-lg bg-white cursor-pointer text-slate-600 whitespace-nowrap" onClick={() => navigate("/")}>← 一覧に戻る</button>
         <h1 className="flex-1 m-0 text-[22px] font-extrabold text-slate-900">{isAdmin ? "ゲーム資産を編集" : "ゲーム資産の詳細"}</h1>
         {!isAdmin && <span className="text-[13px] font-bold text-slate-400 bg-slate-100 py-1 px-3 rounded-full">閲覧モード</span>}
+        {isAdmin && <button className="py-2.5 px-4 text-[15px] border border-slate-300 rounded-lg bg-white cursor-pointer text-slate-600 font-bold whitespace-nowrap" onClick={handleCopy}>📋 コピーを作成</button>}
         {isAdmin && <button className="py-2.5 px-4 text-[15px] border border-red-300 rounded-lg bg-red-50 cursor-pointer text-red-600 font-bold whitespace-nowrap" onClick={handleDelete}>🗑 削除する</button>}
       </div>
 

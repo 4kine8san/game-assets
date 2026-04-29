@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..messages import (
+    COPY_NAME_SUFFIX,
     ERR_ASSET_NOT_FOUND,
     ERR_IMAGE_ROTATION_FAILED,
     ERR_INVALID_DOWNLOAD_FORMAT,
@@ -297,6 +298,34 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, ERR_ASSET_NOT_FOUND)
     asset.deleted_at = datetime.now(UTC)
     db.commit()
+
+
+# ── copy asset (metadata only, no photos) ───────────────
+@router.post("/{asset_id}/copy", response_model=AssetResponse, status_code=201)
+def copy_asset(asset_id: int, db: Session = Depends(get_db)):
+    src = db.query(Asset).filter(Asset.id == asset_id, Asset.deleted_at.is_(None)).first()
+    if not src:
+        raise HTTPException(404, ERR_ASSET_NOT_FOUND)
+
+    copied_name = (src.name + COPY_NAME_SUFFIX)[:255]
+    new_asset = Asset(
+        name=copied_name,
+        asset_category=src.asset_category,
+        hardware=src.hardware,
+        maker=src.maker,
+        genre=src.genre,
+        edition=src.edition,
+        official_url=src.official_url,
+        release_year=src.release_year,
+        condition=src.condition,
+        asset_value=src.asset_value,
+        tags=src.tags,
+        description=src.description,
+    )
+    db.add(new_asset)
+    db.commit()
+    db.refresh(new_asset)
+    return build_asset(new_asset)
 
 
 # ── add photos ───────────────────────────────────────────

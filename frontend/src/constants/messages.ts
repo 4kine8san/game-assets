@@ -7,6 +7,7 @@ export const MESSAGES = {
   // CRUD operations
   ERR_SAVE_FAILED: "保存に失敗しました。もう一度お試しください。",
   ERR_DELETE_FAILED: "削除に失敗しました",
+  ERR_COPY_FAILED: "コピーに失敗しました",
   ERR_REGISTER_FAILED: "登録に失敗しました。入力内容を確認してください。",
 
   // Search

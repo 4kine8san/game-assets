@@ -40,6 +40,11 @@ export async function deleteAsset(id: number): Promise<void> {
   await api.delete(`/api/assets/${id}`);
 }
 
+export async function copyAsset(id: number): Promise<Asset> {
+  const { data } = await api.post<Asset>(`/api/assets/${id}/copy`);
+  return data;
+}
+
 export async function addPhotos(assetId: number, formData: FormData): Promise<Asset> {
   const { data } = await api.post<Asset>(`/api/assets/${assetId}/photos`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
