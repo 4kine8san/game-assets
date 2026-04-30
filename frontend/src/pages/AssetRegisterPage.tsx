@@ -8,6 +8,7 @@ import { applyRotation } from "../components/photoUtils";
 import { useMasters } from "../contexts/MastersContext";
 import { MESSAGES } from "../constants/messages";
 import { getApiErrorDetail } from "../utils/apiError";
+import { formatPriceInfo } from "../utils/formatPrice";
 
 interface FormState {
   name: string;
@@ -52,7 +53,7 @@ export default function AssetRegisterPage() {
     setSearching(true);
     setSearchMsg("");
     try {
-      const result = await searchGameInfo(form.name.trim());
+      const result = await searchGameInfo(form.name.trim(), form.hardware || null);
       if (!result.found) {
         setSearchMsg(MESSAGES.INFO_GAME_NOT_FOUND);
         setIsSearchError(true);
@@ -65,7 +66,8 @@ export default function AssetRegisterPage() {
         release_year: result.release_year ?? f.release_year,
         official_url: result.official_url ?? f.official_url,
       }));
-      setSearchMsg(`「${result.source_title}」の情報を入力しました`);
+      const priceInfo = formatPriceInfo(result.price_used, result.price_new);
+      setSearchMsg(`「${result.source_title}」の情報を入力しました${priceInfo}`);
       setIsSearchError(false);
     } catch (e: unknown) {
       setSearchMsg(getApiErrorDetail(e) ?? MESSAGES.ERR_SEARCH_FAILED);

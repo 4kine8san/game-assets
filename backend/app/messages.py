@@ -25,6 +25,11 @@ ERR_RAWG_API_KEY_MISSING = (
 )
 ERR_RAWG_API_ACCESS_FAILED = "RAWG API へのアクセスに失敗しました"
 
+# Search (Anthropic web search)
+ERR_ANTHROPIC_API_KEY_MISSING = (
+    "ANTHROPIC_API_KEY が未設定です。バックエンドの .env に ANTHROPIC_API_KEY を設定してください。"
+)
+
 # Stats
 ERR_INVALID_PARAMETER = "不正なパラメータです"
 

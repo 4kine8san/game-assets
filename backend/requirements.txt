@@ -9,4 +9,5 @@ alembic==1.13.3
 pydantic==2.9.2
 pydantic-settings==2.5.2
 httpx>=0.28
+anthropic>=0.45
 ruff>=0.15
