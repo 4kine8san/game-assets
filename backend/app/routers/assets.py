@@ -84,6 +84,7 @@ def build_asset(asset: Asset) -> AssetResponse:
         official_url=asset.official_url,
         release_year=asset.release_year,
         condition=asset.condition,
+        ownership_status=asset.ownership_status or "holding",
         asset_value=asset.asset_value,
         tags=asset.tags,
         description=asset.description,
@@ -94,7 +95,7 @@ def build_asset(asset: Asset) -> AssetResponse:
     )
 
 
-def _apply_filters(q, search, asset_category, hardware, genre):
+def _apply_filters(q, search, asset_category, hardware, genre, ownership_status=None):
     if search:
         q = q.filter(
             or_(
@@ -110,6 +111,8 @@ def _apply_filters(q, search, asset_category, hardware, genre):
         q = q.filter(Asset.hardware == hardware)
     if genre:
         q = q.filter(Asset.genre == genre)
+    if ownership_status:
+        q = q.filter(Asset.ownership_status == ownership_status)
     return q
 
 
@@ -122,12 +125,13 @@ def list_assets(
     asset_category: str | None = Query(None),
     hardware: str | None = Query(None),
     genre: str | None = Query(None),
+    ownership_status: str | None = Query(None),
     sort_by: str | None = Query("name"),
     sort_dir: str | None = Query("asc"),
     db: Session = Depends(get_db),
 ):
     q = db.query(Asset).filter(Asset.deleted_at.is_(None))
-    q = _apply_filters(q, search, asset_category, hardware, genre)
+    q = _apply_filters(q, search, asset_category, hardware, genre, ownership_status)
 
     sort_map = {
         "name": Asset.name,
@@ -161,6 +165,7 @@ DOWNLOAD_FIELDS = [
     "official_url",
     "release_year",
     "condition",
+    "ownership_status",
     "asset_value",
     "tags",
     "description",
@@ -226,6 +231,7 @@ async def create_asset(
     official_url: str | None = Form(None, max_length=2048),
     release_year: str | None = Form(None, max_length=10),
     condition: str | None = Form(None, max_length=50),
+    ownership_status: str = Form("holding", max_length=20),
     asset_value: int | None = Form(None, ge=0, le=2_000_000_000),
     tags: str | None = Form(None, max_length=1000),
     description: str | None = Form(None, max_length=5000),
@@ -250,6 +256,7 @@ async def create_asset(
         official_url=official_url or None,
         release_year=release_year or None,
         condition=condition or None,
+        ownership_status=ownership_status,
         asset_value=asset_value,
         tags=tags or None,
         description=description or None,
@@ -318,6 +325,7 @@ def copy_asset(asset_id: int, db: Session = Depends(get_db)):
         official_url=src.official_url,
         release_year=src.release_year,
         condition=src.condition,
+        ownership_status="holding",
         asset_value=src.asset_value,
         tags=src.tags,
         description=src.description,

@@ -1,6 +1,7 @@
 import type { AssetFilters } from "../types/asset";
 import { SORT_OPTIONS } from "../types/asset";
 import { useMasters } from "../contexts/MastersContext";
+import { OWNERSHIP_STATUS_OPTIONS } from "../constants/labels";
 
 interface Props {
   filters: AssetFilters;
@@ -19,7 +20,7 @@ export default function FilterBar({ filters, onChange }: Props) {
     onChange({ ...filters, sort_by, sort_dir });
   };
 
-  const hasFilter = !!(filters.search || filters.asset_category || filters.hardware || filters.genre);
+  const hasFilter = !!(filters.search || filters.asset_category || filters.hardware || filters.genre || filters.ownership_status);
 
   return (
     <div className="flex gap-2.5 flex-wrap items-center py-3.5">
@@ -46,6 +47,11 @@ export default function FilterBar({ filters, onChange }: Props) {
         {genre.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
 
+      <select className={selClass} value={filters.ownership_status} onChange={(e) => set("ownership_status", e.target.value)}>
+        <option value="">すべての保有状況</option>
+        {OWNERSHIP_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+
       <select className={selClass} value={sortValue} onChange={(e) => handleSort(e.target.value)}>
         {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -53,7 +59,7 @@ export default function FilterBar({ filters, onChange }: Props) {
       {hasFilter && (
         <button
           className="py-[11px] px-4 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer text-slate-500 whitespace-nowrap"
-          onClick={() => onChange({ search: "", asset_category: "", hardware: "", genre: "", sort_by: filters.sort_by, sort_dir: filters.sort_dir })}
+          onClick={() => onChange({ search: "", asset_category: "", hardware: "", genre: "", ownership_status: "", sort_by: filters.sort_by, sort_dir: filters.sort_dir })}
         >
           条件をクリア
         </button>

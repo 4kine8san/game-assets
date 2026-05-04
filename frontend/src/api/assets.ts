@@ -10,6 +10,7 @@ export interface FetchAssetsParams {
   asset_category?: string;
   hardware?: string;
   genre?: string;
+  ownership_status?: string;
   sort_by?: string;
   sort_dir?: string;
 }
@@ -68,7 +69,7 @@ export async function deletePhoto(assetId: number, photoId: number): Promise<voi
 
 export async function downloadAssets(
   format: "csv" | "json",
-  filters: Pick<FetchAssetsParams, "search" | "asset_category" | "hardware" | "genre">
+  filters: Pick<FetchAssetsParams, "search" | "asset_category" | "hardware" | "genre" | "ownership_status">
 ): Promise<void> {
   const res = await api.get("/api/assets/download", {
     params: { format, ...filters },

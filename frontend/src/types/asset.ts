@@ -17,6 +17,7 @@ export interface Asset {
   official_url?: string;
   release_year?: string;
   condition?: string;
+  ownership_status: string;
   asset_value?: number;
   tags?: string;
   description?: string;
@@ -39,6 +40,7 @@ export interface AssetFilters {
   asset_category: string;
   hardware: string;
   genre: string;
+  ownership_status: string;
   sort_by: string;
   sort_dir: string;
 }

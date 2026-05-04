@@ -13,6 +13,7 @@ import { useMasters } from "../contexts/MastersContext";
 import { useAdmin } from "../contexts/AdminContext";
 import { API_BASE_URL } from "../config";
 import { MESSAGES } from "../constants/messages";
+import { OWNERSHIP_STATUS_OPTIONS } from "../constants/labels";
 import { getApiErrorDetail } from "../utils/apiError";
 import { formatPriceInfo } from "../utils/formatPrice";
 
@@ -38,6 +39,7 @@ interface FormState {
   official_url: string;
   release_year: string;
   condition: string;
+  ownership_status: string;
   asset_value: string;
   tags: string;
   description: string;
@@ -54,7 +56,7 @@ export default function AssetEditPage() {
 
   const [form, setForm] = useState<FormState>({
     name: "", asset_category: "consumer", hardware: "", maker: "",
-    genre: "", edition: "", official_url: "", release_year: "", condition: "", asset_value: "", tags: "", description: "",
+    genre: "", edition: "", official_url: "", release_year: "", condition: "", ownership_status: "holding", asset_value: "", tags: "", description: "",
   });
   const [existingPhotos, setExistingPhotos] = useState<ExistingPhoto[]>([]);
   const [newPhotos, setNewPhotos] = useState<PhotoItem[]>([]);
@@ -86,6 +88,7 @@ export default function AssetEditPage() {
         official_url: asset.official_url ?? "",
         release_year: asset.release_year ?? "",
         condition: asset.condition ?? "",
+        ownership_status: asset.ownership_status ?? "holding",
         asset_value: asset.asset_value != null ? String(asset.asset_value) : "",
         tags: asset.tags ?? "",
         description: asset.description ?? "",
@@ -177,6 +180,7 @@ export default function AssetEditPage() {
         official_url: form.official_url || null,
         release_year: form.release_year || null,
         condition: form.condition || null,
+        ownership_status: form.ownership_status,
         asset_value: form.asset_value ? Number(form.asset_value) : null,
         tags: form.tags || null,
         description: form.description || null,
@@ -329,6 +333,12 @@ export default function AssetEditPage() {
             <select className={selectClass} value={form.condition} onChange={(e) => set("condition", e.target.value)} disabled={!isAdmin}>
               <option value="">選択してください</option>
               {condition.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+
+          <Field label="保有状況" required>
+            <select className={selectClass} value={form.ownership_status} onChange={(e) => set("ownership_status", e.target.value)} disabled={!isAdmin}>
+              {OWNERSHIP_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
 

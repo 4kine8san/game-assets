@@ -18,7 +18,8 @@ class Asset(Base):
     official_url = Column(String(500), nullable=True)
     release_year = Column(String(10), nullable=True)
     condition = Column(String(20), nullable=True)  # new | like_new | used
-    asset_value = Column(Integer, nullable=True)
+    ownership_status = Column(String(20), nullable=False, default="holding", index=True)
+    asset_value = Column(Integer, nullable=True, index=True)
     tags = Column(String(500), nullable=True)
     description = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -26,6 +26,7 @@ class AssetResponse(BaseModel):
     official_url: str | None = None
     release_year: str | None = None
     condition: str | None = None
+    ownership_status: str = "holding"
     asset_value: int | None = None
     tags: str | None = None
     description: str | None = None
@@ -49,6 +50,7 @@ class AssetUpdate(BaseModel):
     official_url: str | None = Field(None, max_length=2048)
     release_year: str | None = Field(None, max_length=10)
     condition: str | None = Field(None, max_length=50)
+    ownership_status: str | None = Field(None, max_length=20)
     asset_value: int | None = Field(None, ge=0, le=2_000_000_000)
     tags: str | None = Field(None, max_length=1000)
     description: str | None = Field(None, max_length=5000)

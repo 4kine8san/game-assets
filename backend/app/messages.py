@@ -39,6 +39,7 @@ X_AXIS_LABELS: dict[str, str] = {
     "asset_category": "種類",
     "edition": "エディション",
     "release_year": "販売年",
+    "ownership_status": "保有状況",
 }
 
 Y_AXIS_LABELS: dict[str, str] = {

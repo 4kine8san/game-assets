@@ -16,6 +16,7 @@ const INIT_FILTERS: AssetFilters = {
   asset_category: "",
   hardware: "",
   genre: "",
+  ownership_status: "",
   sort_by: "name",
   sort_dir: "asc",
 };
@@ -64,6 +65,7 @@ export default function AssetListPage() {
         asset_category: f.asset_category || undefined,
         hardware: f.hardware || undefined,
         genre: f.genre || undefined,
+        ownership_status: f.ownership_status || undefined,
         sort_by: f.sort_by || "name",
         sort_dir: f.sort_dir || "asc",
       });
@@ -124,6 +126,7 @@ export default function AssetListPage() {
         asset_category: filters.asset_category || undefined,
         hardware: filters.hardware || undefined,
         genre: filters.genre || undefined,
+        ownership_status: filters.ownership_status || undefined,
       });
     } catch {
       setDlError(MESSAGES.ERR_DOWNLOAD_FAILED);
@@ -221,7 +224,7 @@ export default function AssetListPage() {
           {viewMode === "grid" && (
             <div
               className="grid gap-3 px-3.5 py-1.5 text-xs font-bold text-slate-500 border-b-2 border-slate-200 mb-1"
-              style={{ gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 95px 24px" }}
+              style={{ gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 80px 95px 24px" }}
             >
               <div />
               <div>資産名</div>
@@ -230,6 +233,7 @@ export default function AssetListPage() {
               <div>ジャンル</div>
               <div>エディション</div>
               <div>状態</div>
+              <div>保有状況</div>
               <div className="text-right">評価額</div>
               <div />
             </div>

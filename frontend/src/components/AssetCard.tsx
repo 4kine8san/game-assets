@@ -1,7 +1,7 @@
 import type { Asset } from "../types/asset";
 import { useMasters } from "../contexts/MastersContext";
 import { API_BASE_URL } from "../config";
-import { CATEGORY_LABEL } from "../constants/labels";
+import { CATEGORY_LABEL, OWNERSHIP_STATUS_COLOR, OWNERSHIP_STATUS_LABEL } from "../constants/labels";
 
 export type ViewMode = "large" | "medium" | "small" | "grid";
 
@@ -15,7 +15,6 @@ interface Props {
 function findLabel(opts: { value: string; label: string }[], val?: string) {
   return opts.find((o) => o.value === val)?.label ?? val ?? "";
 }
-
 
 const CATEGORY_COLOR: Record<string, string> = {
   arcade: "#dc2626", hardware: "#0891b2", other: "#7c3aed", consumer: "#2563eb",
@@ -31,13 +30,15 @@ export default function AssetCard({ asset, onClick, viewMode = "medium", isAdmin
   const catColor = CATEGORY_COLOR[asset.asset_category] ?? "#2563eb";
   const catLabel = CATEGORY_LABEL[asset.asset_category] ?? asset.asset_category;
   const thumbSrc = asset.thumbnail_url ? `${API_BASE_URL}${asset.thumbnail_url}` : null;
+  const statusColor = OWNERSHIP_STATUS_COLOR[asset.ownership_status] ?? OWNERSHIP_STATUS_COLOR["holding"];
+  const statusLabel = OWNERSHIP_STATUS_LABEL[asset.ownership_status] ?? asset.ownership_status;
 
   // ── グリッド形式 ──────────────────────────────────────────────────────────────
   if (viewMode === "grid") {
     return (
       <div
         className="grid items-center gap-2.5 bg-white border border-slate-200 rounded-xl py-2 px-3.5 shadow-sm cursor-pointer"
-        style={{ gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 95px 24px" }}
+        style={{ gridTemplateColumns: "56px 1fr 75px 110px 100px 90px 80px 80px 95px 24px" }}
         onClick={() => onClick(asset.id)}
       >
         <div className="w-[56px] h-[56px] rounded-md shrink-0 bg-slate-100 overflow-hidden flex items-center justify-center">
@@ -62,6 +63,14 @@ export default function AssetCard({ asset, onClick, viewMode = "medium", isAdmin
           {conditionLabel
             ? <span className="bg-amber-100 text-amber-800 text-xs py-0.5 px-2 rounded-full font-semibold whitespace-nowrap">{conditionLabel}</span>
             : <span className="text-[13px] text-slate-400">-</span>}
+        </div>
+        <div className="flex items-center overflow-hidden">
+          <span
+            className="text-[11px] py-0.5 px-2 rounded-full font-semibold whitespace-nowrap"
+            style={{ background: statusColor.bg, color: statusColor.text }}
+          >
+            {statusLabel}
+          </span>
         </div>
         <div className="flex items-center justify-end">
           {asset.asset_value != null
@@ -92,6 +101,14 @@ export default function AssetCard({ asset, onClick, viewMode = "medium", isAdmin
         >
           {catLabel}
         </span>
+        {asset.ownership_status !== "holding" && (
+          <span
+            className="absolute top-2 right-2 text-[10px] font-bold py-0.5 px-2 rounded-full"
+            style={{ background: statusColor.bg, color: statusColor.text }}
+          >
+            {statusLabel}
+          </span>
+        )}
       </div>
 
       <div className="p-2.5 px-3 flex-1">

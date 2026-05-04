@@ -7,6 +7,7 @@ import type { PhotoItem } from "../components/photoUtils";
 import { applyRotation } from "../components/photoUtils";
 import { useMasters } from "../contexts/MastersContext";
 import { MESSAGES } from "../constants/messages";
+import { OWNERSHIP_STATUS_OPTIONS } from "../constants/labels";
 import { getApiErrorDetail } from "../utils/apiError";
 import { formatPriceInfo } from "../utils/formatPrice";
 
@@ -20,6 +21,7 @@ interface FormState {
   official_url: string;
   release_year: string;
   condition: string;
+  ownership_status: string;
   asset_value: string;
   tags: string;
   description: string;
@@ -27,7 +29,7 @@ interface FormState {
 
 const INIT: FormState = {
   name: "", asset_category: "consumer", hardware: "", maker: "",
-  genre: "", edition: "", official_url: "", release_year: "", condition: "", asset_value: "", tags: "", description: "",
+  genre: "", edition: "", official_url: "", release_year: "", condition: "", ownership_status: "holding", asset_value: "", tags: "", description: "",
 };
 
 export default function AssetRegisterPage() {
@@ -93,6 +95,7 @@ export default function AssetRegisterPage() {
       if (form.official_url) fd.append("official_url", form.official_url);
       if (form.release_year) fd.append("release_year", form.release_year);
       if (form.condition) fd.append("condition", form.condition);
+      fd.append("ownership_status", form.ownership_status);
       if (form.asset_value) fd.append("asset_value", form.asset_value);
       if (form.tags) fd.append("tags", form.tags);
       if (form.description) fd.append("description", form.description);
@@ -186,6 +189,12 @@ export default function AssetRegisterPage() {
             <select className={selectClass} value={form.condition} onChange={(e) => set("condition", e.target.value)}>
               <option value="">選択してください</option>
               {condition.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+
+          <Field label="保有状況" required>
+            <select className={selectClass} value={form.ownership_status} onChange={(e) => set("ownership_status", e.target.value)}>
+              {OWNERSHIP_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
 
