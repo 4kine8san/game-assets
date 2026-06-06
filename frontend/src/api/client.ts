@@ -1,6 +1,9 @@
 import axios from "axios";
+import { API_BASE_URL } from "../config";
 
-const client = axios.create({ baseURL: "http://localhost:8000" });
+// 開発時は http://localhost:8000、本番は VITE_API_BASE_URL="" で同一オリジン
+// (nginx が /api をバックエンドへプロキシ)
+const client = axios.create({ baseURL: API_BASE_URL });
 
 client.interceptors.response.use(
   (res) => res,

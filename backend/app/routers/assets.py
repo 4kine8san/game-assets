@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response
-from PIL import Image
+from PIL import Image, ImageOps
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -52,9 +52,10 @@ def _verify_image(data: bytes, filename: str) -> None:
 def make_thumbnail(src: bytes) -> bytes | None:
     try:
         buf = io.BytesIO()
-        with Image.open(io.BytesIO(src)) as img:
-            img.thumbnail(THUMB_SIZE)
-            img.convert("RGB").save(buf, "JPEG", quality=88)
+        with Image.open(io.BytesIO(src)) as raw:
+            img = ImageOps.exif_transpose(raw)
+        img.thumbnail(THUMB_SIZE)
+        img.convert("RGB").save(buf, "JPEG", quality=88)
         return buf.getvalue()
     except Exception:
         return None
@@ -400,6 +401,7 @@ def rotate_photo(
         img = Image.open(io.BytesIO(photo.file_data))
         img.load()
         fmt = img.format or "JPEG"
+        img = ImageOps.exif_transpose(img)  # normalize EXIF orientation before rotating
         rotated = img.rotate(-degrees, expand=True)  # Pillow: negative = CW
         converted = rotated.convert("RGB" if fmt in ("JPEG", "JPG") else img.mode)
 
